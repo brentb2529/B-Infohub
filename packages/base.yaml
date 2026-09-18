@@ -38,7 +38,12 @@ wifi:
   # local bridge a real replacement for the InfoHub's cell modem rather than a
   # fair-weather one.
   power_save_mode: none
-  reboot_timeout: 0s          # never self-reboot on Wi-Fi loss; the bus data still matters
+  # Still never self-reboot merely because Wi-Fi dropped: the RS-485 bus keeps
+  # being read, the flash event log keeps recording, and MQTT may still be
+  # delivering. Rebooting would throw away the buffered evidence that is the
+  # whole point of the flash log. The api reboot_timeout above is the watchdog
+  # for the case that actually stranded us -- associated, but not usable.
+  reboot_timeout: 0s
 
   # BLUETOOTH IS OFF WHENEVER WI-FI IS UP.
   #
@@ -180,6 +185,28 @@ time:
 api:
   encryption:
     key: !secret api_encryption_key
+
+  # THE ONLY WATCHDOG THAT COVERS "ON THE NETWORK BUT USELESS".
+  #
+  # Found the hard way. After a restart the bridge reassociated on a marginal
+  # link: it answered ping, its web server returned 401s, and Home Assistant
+  # still could not complete an API handshake for twenty minutes. Neither of
+  # the other timeouts can catch that state --
+  #
+  #   wifi.reboot_timeout  is 0s here on purpose (below), and would not have
+  #                        fired anyway: Wi-Fi was ASSOCIATED the whole time
+  #   mqtt.reboot_timeout  is 0s, same reasoning
+  #
+  # -- so recovery came from this one, at its 15 minute default. Fifteen minutes
+  # of a generator monitor being blind is too long, and the only reason it
+  # recovered at all was a default nobody had chosen.
+  #
+  # Five minutes is the trade. The cost is that a genuinely long Home Assistant
+  # outage makes the bridge reboot every five minutes, each one writing a BOOT
+  # record. That is cheap -- 16 bytes into a 4096-entry ring, about 12 an hour --
+  # and the alternative is staying dark through exactly the failure this device
+  # exists to report.
+  reboot_timeout: 5min
 
 ota:
   - platform: esphome
