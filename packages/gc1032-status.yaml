@@ -1,0 +1,199 @@
+# GC-1032 status word and raw fault registers — input registers 0x0040-0x004F (FC04).
+#
+# This package polls the raw 16 registers as internal sensors and decodes the status
+# word 0x004F. gc1032-alarms.yaml consumes the same raw sensors to produce the 51
+# individual fault entities.
+#
+# Bitfield values below come from genmon's `generator_status`, `switch_state`,
+# `engine_state` and `status` sections in vendor/Briggs_Stratton_GC-1032.json.
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Alarm Register 1"
+    address: 0x0040
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: alarm_reg_40
+    force_new_range: true      # do not merge back across the 0x003E-0x003F hole
+
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 2",  address: 0x0041, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_41}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 3",  address: 0x0042, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_42}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 4",  address: 0x0043, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_43}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 5",  address: 0x0044, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_44}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 6",  address: 0x0045, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_45}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 7",  address: 0x0046, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_46}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 8",  address: 0x0047, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_47}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 9",  address: 0x0048, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_48}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 10", address: 0x0049, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_49}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 11", address: 0x004A, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_4a}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 12", address: 0x004B, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_4b}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 13", address: 0x004C, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_4c}
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 14", address: 0x004D, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_4d}
+
+  # 0x004E is dual-purpose: genmon lists it as "Alarm Register 15" but also reads
+  # engine-state bits out of it (Fuel Relay Open, Starting). Those two are ordinary
+  # active-high bits, unlike the active-low fault nibbles.
+  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Alarm Register 15", address: 0x004E, register_type: read, value_type: U_WORD, internal: true, id: alarm_reg_4e}
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Status Register"
+    address: 0x004F
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: alarm_reg_4f
+
+text_sensor:
+  # Raw status word in hex. Keep this enabled during bring-up — every decode below is
+  # a guess until you have watched this transition through a real exercise cycle.
+  # Expect 0x6800 at rest and 0x7100 while exercising.
+  - platform: template
+    name: "Status Register Raw"
+    id: status_register_raw
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      char buf[8];
+      snprintf(buf, sizeof(buf), "0x%04X", (unsigned) (uint16_t) id(alarm_reg_4f).state);
+      return std::string(buf);
+
+  # POWER STATUS -- rewritten against observed hardware, NOT genmon's enum.
+  #
+  # genmon models 0x004F's high bits as a 0x7F00 enum with six values. That model is
+  # wrong, and a real run proved it: this unit produced 0x6080 and 0x6100, neither of
+  # which is in the enum, so the entity read "Unknown" for the entire run.
+  #
+  # The bits are overlapping FLAGS, and genmon's own values decompose cleanly:
+  #     0x4000  utility healthy        0x0800  Auto mode selected
+  #     0x1000  called to run          0x0200  producing power
+  #     0x0100  engine running         0x0080  engine stopped
+  #     0x0040  stopped with fault     0x0008  common shutdown
+  # Check: 0x6800 Off-Ready = utility + auto.  0x7100 Exercising = utility + called +
+  # running.  0x3900 Initialized = called + auto + running with utility CLEAR, i.e.
+  # an outage. The 0x7F00 mask straddles the running bit at 0x0100, which is exactly
+  # why unseen combinations fell through.
+  #
+  # Observed on 2026-08-31 (captures/run-2026-08-31.csv):
+  #     0x6880  utility + auto + stopped          idle in AUTO
+  #     0x6080  utility + stopped                 idle in MANUAL
+  #     0x6100  utility + running                 running in MANUAL (low-speed test)
+  #
+  # genmon's six labels are still honoured when the word matches one exactly, so
+  # nothing regresses; anything else is composed from flags instead of "Unknown".
+  - platform: template
+    name: "Power Status"
+    id: power_status
+    icon: mdi:engine
+    update_interval: 5s
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      uint16_t s = (uint16_t) id(alarm_reg_4f).state;
+      switch (s & 0x7F00) {
+        case 0x3900: return std::string("Initialized");
+        case 0x3B00: return std::string("Generating");
+        case 0x6800: return std::string("Off - Ready");
+        case 0x6900: return std::string("Cool Down at Idle");
+        case 0x6B00: return std::string("Shutdown Pending");
+        case 0x7100: return std::string("Exercising");
+      }
+      std::string out = (s & 0x0800) ? "Auto" : "Manual";
+      if (s & 0x0040)      out += " - Stopped with Fault";
+      else if (s & 0x0100) out += " - Running";
+      else if (s & 0x0080) out += " - Stopped";
+      if (s & 0x0200) out += " (generating)";
+      if (s & 0x1000) out += " (called to run)";
+      if (!(s & 0x4000)) out += " (UTILITY DOWN)";
+      return out;
+
+  - platform: template
+    name: "Switch Status"
+    id: switch_status
+    icon: mdi:toggle-switch
+    update_interval: 5s
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      switch (((uint16_t) id(alarm_reg_4f).state) & 0x3800) {
+        case 0x2000: return std::string("Manual");
+        case 0x2800: return std::string("Automatic");
+        case 0x3000: return std::string("Scheduled Exercise in Progress");
+        case 0x3800: return std::string("Generator Initialized");
+        default:     return std::string("Unknown");
+      }
+      // Confirmed by hardware: 0x2800 while idle in AUTO, 0x2000 after selecting
+      // MANUAL at the panel. The distinguishing bit is 0x0800.
+
+  - platform: template
+    name: "Engine State"
+    id: engine_state
+    icon: mdi:engine-outline
+    update_interval: 5s
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state) || isnan(id(alarm_reg_4e).state)) return {};
+      uint16_t s = (uint16_t) id(alarm_reg_4f).state;
+      uint16_t e = (uint16_t) id(alarm_reg_4e).state;
+      if (e & 0x0020) return std::string("Starting");
+      if (s & 0x0100) return std::string("Running");
+      if (s & 0x0040) return std::string("Stopped with Fault");
+      if (s & 0x0080) return std::string("Stopped");
+      return std::string("Unknown");
+      // 0x004E bit 0x0010 (Fuel Relay Open) was observed setting on start and
+      // clearing on stop, confirming 0x004E doubles as an engine-state register.
+
+binary_sensor:
+  - platform: template
+    name: "Engine Running"
+    id: engine_running
+    device_class: running
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0100) != 0;
+
+  - platform: template
+    name: "Engine Starting"
+    id: engine_starting
+    device_class: running
+    lambda: |-
+      if (isnan(id(alarm_reg_4e).state)) return {};
+      return (((uint16_t) id(alarm_reg_4e).state) & 0x0020) != 0;
+
+  - platform: template
+    name: "Fuel Relay Open"
+    id: fuel_relay_open
+    entity_category: diagnostic
+    lambda: |-
+      if (isnan(id(alarm_reg_4e).state)) return {};
+      return (((uint16_t) id(alarm_reg_4e).state) & 0x0010) != 0;
+
+  # Utility bit is active-high for HEALTHY, so a problem sensor must invert it.
+  - platform: template
+    name: "Utility Power Failure"
+    id: utility_power_failure
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x4000) == 0;
+
+  - platform: template
+    name: "Common Shutdown"
+    id: common_shutdown
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0008) != 0;
+
+  - platform: template
+    name: "Controller in Config Mode"
+    id: controller_in_config_mode
+    entity_category: diagnostic
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x8000) != 0;
+
+  - platform: status
+    name: "Bridge Connected"
+    id: bridge_connected
+    entity_category: diagnostic

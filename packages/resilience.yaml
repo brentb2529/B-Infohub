@@ -1,0 +1,189 @@
+# Durability: safe mode, OTA rollback, and the flash event log.
+#
+# Three layers that protect different things:
+#
+#   OTA ROLLBACK (bootloader, ESP-IDF)
+#     A bad image that crashes or never marks itself healthy is reverted to the
+#     PREVIOUS image by the bootloader. Recovers from "I flashed something
+#     broken". Needs the two-OTA-slot partition table in partitions.csv.
+#
+#   SAFE MODE (ESPHome, application)
+#     After `num_attempts` boots that never stayed up for `boot_is_good_after`,
+#     the next boot brings up Wi-Fi and OTA ONLY -- no Modbus, no MQTT, no
+#     sensors. Recovers from "it boots fine but a component wedges it", which
+#     rollback cannot see because the app did start.
+#
+#   BACKLOG (this project)
+#     Protects the RECORD rather than the firmware. Alarm transitions go to
+#     flash the moment they happen, so an outage cannot erase the evidence
+#     that a fault occurred.
+#
+# WHY ROLLBACK NEEDED SAYING OUT LOUD
+#
+# `enable_ota_rollback` defaults to TRUE in ESPHome's esp32 component, so it is
+# easy to assume you have rollback. You do not. The validator silently turns it
+# off unless BOTH `ota:` and safe mode are configured:
+#
+#     if not (ota_enabled and safe_mode_enabled):
+#         advanced[CONF_ENABLE_OTA_ROLLBACK] = False
+#
+# Before this file, base.yaml had `ota:` with no safe mode, so every build was
+# shipping WITHOUT the rollback it appeared to have. That is the worst kind of
+# failure: a safety net you believe in that is not attached.
+
+backlog:
+  id: event_log
+  time_id: ha_time
+
+safe_mode:
+  id: safe_mode_component
+  # 10 is ESPHome's default and is too patient for a device on a generator pad.
+  # 5 bad boots is already unambiguous, and gets you a recoverable device sooner.
+  num_attempts: 5
+  # A boot only counts as good after this long. 1min (the default) is too short
+  # here: this bridge takes ~15s to associate and start polling, and a config
+  # that wedges the Modbus loop can still look alive for a minute. 3min means
+  # "it actually ran a few poll cycles".
+  boot_is_good_after: 3min
+  # How long to sit in safe mode waiting for an OTA before rebooting to try the
+  # real firmware again. Long enough to notice and push a fix; not infinite,
+  # which would strand the device if safe mode was entered spuriously.
+  reboot_timeout: 10min
+  on_safe_mode:
+    # SafeModeComponent keeps the attempt count private, so there is no count
+    # to log -- only the fact. That is the useful half anyway.
+    - logger.log:
+        level: ERROR
+        format: "SAFE MODE ENTERED after repeated failed boots. Wi-Fi + OTA only; Modbus, MQTT and all sensors are DOWN. Push a known-good image."
+
+# ---------------------------------------------------------------------------
+# Evidence that the safety nets are real, surfaced as entities.
+# A safety net you cannot observe is one you will not notice has torn.
+# ---------------------------------------------------------------------------
+
+text_sensor:
+  - platform: template
+    name: "Boot Partition"
+    id: boot_partition
+    icon: mdi:chip
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      const esp_partition_t *p = esp_ota_get_running_partition();
+      if (p == nullptr) return {"unknown"};
+      esp_ota_img_states_t st;
+      const char *s = "?";
+      if (esp_ota_get_state_partition(p, &st) == ESP_OK) {
+        switch (st) {
+          case ESP_OTA_IMG_NEW:            s = "new"; break;
+          case ESP_OTA_IMG_PENDING_VERIFY: s = "pending-verify"; break;
+          case ESP_OTA_IMG_VALID:          s = "valid"; break;
+          case ESP_OTA_IMG_INVALID:        s = "invalid"; break;
+          case ESP_OTA_IMG_ABORTED:        s = "aborted"; break;
+          default:                         s = "undefined"; break;
+        }
+      }
+      return {std::string(p->label) + " (" + s + ")"};
+
+  - platform: template
+    name: "Last Reset Reason"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      switch (esp_reset_reason()) {
+        case ESP_RST_POWERON:   return {"power-on"};
+        case ESP_RST_SW:        return {"software"};
+        case ESP_RST_PANIC:     return {"panic"};        // <- the one that matters
+        case ESP_RST_INT_WDT:   return {"interrupt wdt"};
+        case ESP_RST_TASK_WDT:  return {"task wdt"};
+        case ESP_RST_WDT:       return {"other wdt"};
+        case ESP_RST_DEEPSLEEP: return {"deep sleep"};
+        case ESP_RST_BROWNOUT:  return {"brownout"};      // <- suspect the 12V feed
+        case ESP_RST_EXT:       return {"external"};
+        default:                return {"unknown"};
+      }
+
+sensor:
+  - platform: template
+    name: "Event Log Records"
+    id: backlog_count
+    icon: mdi:file-document-multiple
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: 'return id(event_log)->ready() ? (float) id(event_log)->count() : NAN;'
+
+  - platform: template
+    name: "Event Log Cursor"
+    id: backlog_cursor
+    icon: mdi:cursor-default-outline
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: 'return id(event_log)->ready() ? (float) id(event_log)->acked() : NAN;'
+
+  - platform: template
+    name: "Event Log Pending"
+    id: backlog_pending
+    icon: mdi:tray-arrow-up
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: 'return id(event_log)->ready() ? (float) id(event_log)->pending() : NAN;'
+
+button:
+  # Marks the running image good by hand. Normally automatic after
+  # boot_is_good_after, but if you are watching an OTA land over a flaky link
+  # this makes the decision yours.
+  - platform: template
+    name: "Confirm Firmware Good"
+    icon: mdi:shield-check
+    entity_category: diagnostic
+    on_press:
+      - safe_mode.mark_successful:
+      # Re-read the partition state straight afterwards. Without this the Boot
+      # Partition sensor still reports whatever it saw at boot, so pressing this
+      # button appears to do nothing -- which is how a stale "pending-verify"
+      # once got mistaken for a real one.
+      - component.update: boot_partition
+      - logger.log:
+          level: INFO
+          format: "Firmware marked good; rollback will not revert this image."
+
+  - platform: template
+    name: "Dump Event Log"
+    icon: mdi:text-box-search
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          auto evs = id(event_log)->read_since(0);
+          ESP_LOGI("backlog", "%u events on record:", (unsigned) evs.size());
+          for (auto &e : evs) {
+            ESP_LOGI("backlog", "  seq=%u ts=%u type=%u idx=%u",
+                     (unsigned) e.seq, (unsigned) e.ts,
+                     (unsigned) e.type, (unsigned) e.index);
+          }
+
+esphome:
+  on_boot:
+    # Priority -100 = after everything else has started. Reaching this point
+    # with the bus polling is the definition of a good boot for this device.
+    - priority: -100
+      then:
+        - component.update: boot_partition
+        - logger.log:
+            level: INFO
+            format: "Boot complete on partition %s"
+            args: [ 'esp_ota_get_running_partition()->label' ]
+        # The reading above is taken while the image is still PENDING-VERIFY --
+        # safe_mode does not mark it good until boot_is_good_after has elapsed.
+        # With `update_interval: never` that first reading was the ONLY one, so
+        # the sensor reported "pending-verify" forever on an image that had been
+        # valid since minute three. Re-read once the window has passed.
+        - delay: 4min
+        - component.update: boot_partition
+        - logger.log:
+            level: INFO
+            format: "Post-verify partition state re-read"
+

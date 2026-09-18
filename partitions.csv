@@ -1,0 +1,32 @@
+# B-Infohub partition table -- 4 MB ESP32-WROOM-32.
+#
+# CHANGING THIS NEEDS ONE USB FLASH. A partition table cannot relocate the
+# image that is running from it. Do it before the board is sealed in a box.
+#
+# WHY THE APP SLOTS SHRANK (0x1F0000 -> 0x1D0000)
+#
+# To make room for `backlog`: a 256 KB region for telemetry that arrives while
+# Home Assistant is unreachable. Without somewhere to put it, a network outage
+# is simply a hole in the record -- and the thing most worth not losing is an
+# ALARM, which is a one-shot event that never repeats itself.
+#
+#   first 64 KB   4,096 alarm/state events at 16 B each
+#   rest, 192 KB  ~1,100 register snapshots at 178 B = about 3 h at 10 s
+#
+# The cost is 128 KB off each OTA slot. The image is 1.57 MB, so that is 82.9%
+# of a slot rather than 77.4% -- still comfortable, and OTA headroom is what
+# the slot size is for.
+#
+# nvs is 64 KB rather than ESPHome's default 458 KB, which is far more than it
+# will ever use for a handful of preferences.
+#
+# Layout is exact: the last byte of nvs is the last byte of flash. app0/app1
+# start on 64 KB boundaries, which the ESP32 bootloader requires.
+#
+# Name,     Type, SubType, Offset,   Size,     Flags
+otadata,    data, ota,     0x9000,   0x2000,
+phy_init,   data, phy,     0xb000,   0x5000,
+app0,       app,  ota_0,   0x10000,  0x1D0000,
+app1,       app,  ota_1,   0x1E0000, 0x1D0000,
+backlog,    data, 0x40,    0x3B0000, 0x40000,
+nvs,        data, nvs,     0x3F0000, 0x10000,

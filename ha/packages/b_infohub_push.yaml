@@ -1,0 +1,147 @@
+# B-Infohub -> Grafana Cloud, Influx line protocol, pushed on a timer.
+# ---------------------------------------------------------------------------
+# Drop in <config>/packages/. Requires b_infohub_customize.yaml (it supplies the
+# `infohub_field` attributes every macro below selects on) and the same three
+# secrets grafana_push.yaml already uses.
+#
+# Measurement `genset` -> Prometheus series `genset_<field>{site_id=...}`.
+# Deliberately NOT `generator`: see the header of b_infohub_customize.yaml for why
+# colliding with the existing generator_* series would silently corrupt the old
+# dashboard rather than fail loudly.
+#
+# PUSH ON A TIMER, NOT ON STATE CHANGE -- same reasoning as grafana_push.yaml. A
+# battery voltage that sits at 13.1 V for two hours is exactly the case that matters,
+# and a push-on-change pipeline emits one sample for it, after which Prometheus drops
+# the series in 5 minutes and every `for:`-based alert becomes unfireable.
+
+rest_command:
+  b_infohub_push:
+    url: !secret grafana_cloud_write_url
+    method: POST
+    content_type: "text/plain; charset=utf-8"
+    username: !secret grafana_cloud_user
+    password: !secret grafana_cloud_api_key
+    timeout: 20
+    payload: >-
+      {%- set s = states.sensor
+           | selectattr('attributes.infohub_field', 'defined') | list -%}
+      {%- set b = states.binary_sensor
+           | selectattr('attributes.infohub_field', 'defined') | list -%}
+
+      {%- macro sv(f) -%}
+      {{- s | selectattr('attributes.infohub_field', 'eq', f)
+            | map(attribute='state') | first | default('') -}}
+      {%- endmacro -%}
+      {%- macro bv(f) -%}
+      {{- b | selectattr('attributes.infohub_field', 'eq', f)
+            | map(attribute='state') | first | default('') -}}
+      {%- endmacro -%}
+
+      {#- Reuse the site tag the existing pipeline already uses so both measurements
+          land under the same $site_id dashboard variable. -#}
+      {%- set site = (states.sensor
+            | selectattr('attributes.energytrak_site', 'defined')
+            | map(attribute='attributes.energytrak_site')
+            | first | default('home')) -%}
+      {%- set tags = 'site_id=' ~ site | replace(' ', '\\ ') | replace(',', '\\,')
+                   ~ ',source=b-infohub' -%}
+
+      {%- set ns = namespace(f=[]) -%}
+
+      {#- Numeric passthroughs. A non-numeric state (unknown/unavailable) is OMITTED,
+          never coerced to 0 -- a fabricated 0 V battery would fire a real alert. -#}
+      {%- for out, fld in [
+            ('battery_voltage',    'battery_voltage'),
+            ('engine_speed',       'engine_speed'),
+            ('oil_pressure_bar',   'oil_pressure_bar'),
+            ('oil_pressure_psi',   'oil_pressure_psi'),
+            ('coolant_temp_c',     'coolant_temp_c'),
+            ('engine_hours_total', 'engine_hours'),
+            ('starts_total',       'starts_count'),
+            ('trips_total',        'trips_count'),
+            ('gen_l1_voltage',     'gen_l1_voltage'),
+            ('gen_l2_voltage',     'gen_l2_voltage'),
+            ('gen_output_voltage', 'gen_output_voltage'),
+            ('gen_frequency',      'gen_frequency'),
+            ('gen_l1_current',     'gen_l1_current'),
+            ('gen_l2_current',     'gen_l2_current'),
+            ('load_power_kw',      'load_power_kw'),
+            ('load_percent',       'load_percent'),
+            ('load_kva',           'load_kva'),
+            ('power_factor',       'power_factor'),
+            ('cumulative_kwh',     'cumulative_kwh'),
+            ('utility_l1_voltage', 'utility_l1_voltage'),
+            ('utility_voltage',    'utility_voltage'),
+            ('utility_frequency',  'utility_frequency'),
+            ('wifi_rssi',          'wifi_rssi'),
+            ('bridge_uptime',      'bridge_uptime'),
+            ('bridge_temp_c',      'bridge_temp_c') ] -%}
+        {%- set v = sv(fld) | trim -%}
+        {%- if v | float(none) is not none -%}
+          {%- set ns.f = ns.f + [out ~ '=' ~ (v | float)] -%}
+        {%- endif -%}
+      {%- endfor -%}
+
+      {#- Binaries as 1/0. `unknown` is omitted, not sent as 0. -#}
+      {%- for out, fld in [
+            ('running',         'running'),
+            ('starting',        'starting'),
+            ('utility_failure', 'utility_failure'),
+            ('common_shutdown', 'common_shutdown'),
+            ('fuel_relay_open', 'fuel_relay_open'),
+            ('bridge_connected','bridge_connected') ] -%}
+        {%- set v = bv(fld) | trim -%}
+        {%- if v in ['on', 'off'] -%}
+          {%- set ns.f = ns.f + [out ~ '=' ~ (1 if v == 'on' else 0)] -%}
+        {%- endif -%}
+      {%- endfor -%}
+
+      {#- The whole point of going local: 51 individually decoded faults instead of
+          one "fault" flag. Counted by device + device_class rather than by listing
+          all 51 field names, so regenerating gc1032-alarms.yaml from an updated
+          register map does not require touching this file. -#}
+      {%- set alarms = states.binary_sensor
+            | selectattr('attributes.infohub_device', 'defined')
+            | selectattr('attributes.device_class', 'defined')
+            | selectattr('attributes.device_class', 'eq', 'problem') | list -%}
+      {%- set active = alarms | selectattr('state', 'eq', 'on') | list -%}
+      {%- set ns.f = ns.f + ['active_alarm_count=' ~ (active | count)] -%}
+      {%- set ns.f = ns.f + ['decoded_alarm_total=' ~ (alarms | count)] -%}
+
+      {#- Status words as numeric codes so Prometheus can alert and Grafana can
+          value-map them. Keep these in sync with grafana/dashboards/*.json. -#}
+      {%- set pstates = {'off - ready': 0, 'initialized': 1, 'generating': 2,
+                         'exercising': 3, 'cool down at idle': 4,
+                         'shutdown pending': 5} -%}
+      {%- set ns.f = ns.f + ['power_status_code='
+            ~ pstates.get(sv('power_status') | trim | lower, -1)] -%}
+      {%- set sstates = {'manual': 0, 'automatic': 1,
+                         'scheduled exercise in progress': 2,
+                         'generator initialized': 3} -%}
+      {%- set ns.f = ns.f + ['switch_status_code='
+            ~ sstates.get(sv('switch_status') | trim | lower, -1)] -%}
+      {%- set estates = {'stopped': 0, 'starting': 1, 'running': 2,
+                         'stopped with fault': 3} -%}
+      {%- set ns.f = ns.f + ['engine_state_code='
+            ~ estates.get(sv('engine_state') | trim | lower, -1)] -%}
+
+      {%- if ns.f | count > 0 -%}
+      genset,{{ tags }} {{ ns.f | join(',') }}
+      {%- endif -%}
+
+automation:
+  - id: b_infohub_grafana_push
+    alias: "B-Infohub: push metrics to Grafana Cloud"
+    mode: single
+    max_exceeded: silent          # a slow push must not spam the log every 30s
+    trigger:
+      - trigger: time_pattern
+        seconds: "/30"
+    condition:
+      # Nothing useful to send while the bridge is offline, and pushing a payload
+      # of only status codes would reset the alarm count to a misleading 0.
+      - condition: state
+        entity_id: binary_sensor.genset_bridge_connected
+        state: "on"
+    action:
+      - action: rest_command.b_infohub_push

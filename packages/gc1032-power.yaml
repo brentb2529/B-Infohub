@@ -1,0 +1,709 @@
+# GC-1032 electrical measurements — input registers 0x0000-0x002C (FC04).
+# Addresses, multipliers and lengths from vendor/Briggs_Stratton_GC-1032.json.
+#
+# NOTE ON PHASES: a residential split-phase 240 V unit populates L1 and L2 only.
+# The L3 entities are polled (they sit inside the contiguous read block, so skipping
+# them would not save a single bus transaction) but are disabled_by_default so they
+# do not clutter Home Assistant. Enable them if this is ever a 3-phase set.
+
+# ---------------------------------------------------------------------------
+# Exact 32-bit capture for the three cumulative counters.
+#
+# An ESPHome sensor state is a float32: 24 bits of mantissa. These registers
+# are 32-bit counters, so above ~16.7 million the state CANNOT hold the value
+# exactly -- a round trip through the sensor loses the low bits. That is
+# harmless for a dashboard (the error is about 1 part in 16 million) but it is
+# not harmless for packages/passthrough.yaml, which has to hand the InfoHub the
+# same number the controller gave us. Measured: 98% of 32-bit values come back
+# altered.
+#
+# So the raw word is captured here, from the response bytes, before any float
+# is involved. The lambda returns x unchanged, so the sensor behaves exactly as
+# it did; the globals exist purely for the proxy.
+# ---------------------------------------------------------------------------
+globals:
+  - id: raw_dword_0027
+    type: uint32_t
+    restore_value: false
+    initial_value: '0xFFFFFFFF'
+  - id: raw_dword_0029
+    type: uint32_t
+    restore_value: false
+    initial_value: '0xFFFFFFFF'
+  - id: raw_dword_002b
+    type: uint32_t
+    restore_value: false
+    initial_value: '0xFFFFFFFF'
+
+
+sensor:
+  # --- Controller identity -------------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Protocol Revision"
+    id: protocol_revision
+    address: 0x0000
+    register_type: read
+    value_type: U_WORD
+    entity_category: diagnostic
+    force_new_range: true
+
+  # --- Generator output voltage --------------------------------------------
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L1 Voltage"
+    id: generator_l1_voltage
+    address: 0x0001
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L2 Voltage"
+    id: generator_l2_voltage
+    address: 0x0002
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L3 Voltage"
+    id: generator_l3_voltage
+    address: 0x0003
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L1-L2 Voltage"
+    id: generator_l1_l2_voltage
+    address: 0x0004
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+    # This is the one to watch on a split-phase unit — nominal 240 V.
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L2-L3 Voltage"
+    id: generator_l2_l3_voltage
+    address: 0x0005
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L3-L1 Voltage"
+    id: generator_l3_l1_voltage
+    address: 0x0006
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  # --- Generator frequency --------------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L1 Frequency"
+    id: generator_l1_frequency
+    address: 0x0007
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L2 Frequency"
+    id: generator_l2_frequency
+    address: 0x0008
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L3 Frequency"
+    id: generator_l3_frequency
+    address: 0x0009
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  # --- Power factor ---------------------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L1 Power Factor"
+    id: l1_power_factor
+    address: 0x000A
+    register_type: read
+    value_type: U_WORD
+    device_class: power_factor
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L2 Power Factor"
+    id: l2_power_factor
+    address: 0x000B
+    register_type: read
+    value_type: U_WORD
+    device_class: power_factor
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L3 Power Factor"
+    id: l3_power_factor
+    address: 0x000C
+    register_type: read
+    value_type: U_WORD
+    device_class: power_factor
+    state_class: measurement
+    accuracy_decimals: 2
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Average Power Factor"
+    id: average_power_factor
+    address: 0x000D
+    register_type: read
+    value_type: U_WORD
+    device_class: power_factor
+    state_class: measurement
+    accuracy_decimals: 2
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.01
+
+  # --- Utility (mains) voltage ---------------------------------------------
+  # These are how you detect an outage independently of the status word.
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L1 Voltage"
+    id: utility_l1_voltage
+    address: 0x000E
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L2 Voltage"
+    id: utility_l2_voltage
+    address: 0x000F
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L3 Voltage"
+    id: utility_l3_voltage
+    address: 0x0010
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L1-L2 Voltage"
+    id: utility_l1_l2_voltage
+    address: 0x0011
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L2-L3 Voltage"
+    id: utility_l2_l3_voltage
+    address: 0x0012
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L3-L1 Voltage"
+    id: utility_l3_l1_voltage
+    address: 0x0013
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L1 Frequency"
+    id: utility_l1_frequency
+    address: 0x0014
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L2 Frequency"
+    id: utility_l2_frequency
+    address: 0x0015
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Utility L3 Frequency"
+    id: utility_l3_frequency
+    address: 0x0016
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  # --- Current --------------------------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L1 Current"
+    id: generator_l1_current
+    address: 0x0017
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L2 Current"
+    id: generator_l2_current
+    address: 0x0018
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Generator L3 Current"
+    id: generator_l3_current
+    address: 0x0019
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  # --- Real power -----------------------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L1 Power"
+    id: l1_power
+    address: 0x001A
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L2 Power"
+    id: l2_power
+    address: 0x001B
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L3 Power"
+    id: l3_power
+    address: 0x001C
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Total Power"
+    id: total_power
+    address: 0x001D
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Percentage Load"
+    id: percentage_load
+    address: 0x001E
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 0
+    # genmon's input_registers table gives this a multiplier of 1, but its "status"
+    # section renders the same register with 0.1. If this reads 10x high on a real
+    # load, add `filters: [multiply: 0.1]`. Verify during your first exercise cycle.
+
+  # --- Apparent / reactive power -------------------------------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L1 Apparent Power"
+    id: l1_apparent_power
+    address: 0x001F
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kVA
+    device_class: apparent_power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L2 Apparent Power"
+    id: l2_apparent_power
+    address: 0x0020
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kVA
+    device_class: apparent_power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L3 Apparent Power"
+    id: l3_apparent_power
+    address: 0x0021
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kVA
+    device_class: apparent_power
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Total Apparent Power"
+    id: total_apparent_power
+    address: 0x0022
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kVA
+    device_class: apparent_power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L1 Reactive Power"
+    id: l1_reactive_power
+    address: 0x0023
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kvar
+    device_class: reactive_power
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L2 Reactive Power"
+    id: l2_reactive_power
+    address: 0x0024
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kvar
+    device_class: reactive_power
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "L3 Reactive Power"
+    id: l3_reactive_power
+    address: 0x0025
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kvar
+    device_class: reactive_power
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Total Reactive Power"
+    id: total_reactive_power
+    address: 0x0026
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kvar
+    device_class: reactive_power
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  # --- Cumulative energy (32-bit, two registers each) -----------------------
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Cumulative Energy"
+    id: cumulative_energy
+    # Capture the exact 32-bit word for the InfoHub proxy; see the note above.
+    lambda: |-
+      if (data.size() >= 4)
+        id(raw_dword_0027) = ((uint32_t) data[0] << 24) | ((uint32_t) data[1] << 16) |
+                               ((uint32_t) data[2] << 8)  |  (uint32_t) data[3];
+      return x;
+    address: 0x0027            # spans 0x0027-0x0028
+    register_type: read
+    value_type: U_DWORD
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 4294967295.0f ? NAN : x;'  # sentinel = not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Cumulative Apparent Energy"
+    id: cumulative_apparent_energy
+    # Capture the exact 32-bit word for the InfoHub proxy; see the note above.
+    lambda: |-
+      if (data.size() >= 4)
+        id(raw_dword_0029) = ((uint32_t) data[0] << 24) | ((uint32_t) data[1] << 16) |
+                               ((uint32_t) data[2] << 8)  |  (uint32_t) data[3];
+      return x;
+    address: 0x0029            # spans 0x0029-0x002A
+    register_type: read
+    value_type: U_DWORD
+    unit_of_measurement: kVAh
+    state_class: total_increasing
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 4294967295.0f ? NAN : x;'  # sentinel = not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Cumulative Reactive Energy"
+    id: cumulative_reactive_energy
+    # Capture the exact 32-bit word for the InfoHub proxy; see the note above.
+    lambda: |-
+      if (data.size() >= 4)
+        id(raw_dword_002b) = ((uint32_t) data[0] << 24) | ((uint32_t) data[1] << 16) |
+                               ((uint32_t) data[2] << 8)  |  (uint32_t) data[3];
+      return x;
+    address: 0x002B            # spans 0x002B-0x002C
+    register_type: read
+    value_type: U_DWORD
+    unit_of_measurement: kvarh
+    state_class: total_increasing
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 4294967295.0f ? NAN : x;'  # sentinel = not present
+      - multiply: 0.1
+
+  # >>> 0x002D-0x0032 IS A HOLE. Do not poll it. See docs/register-map.md.

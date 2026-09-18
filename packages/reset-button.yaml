@@ -1,0 +1,78 @@
+# External reconfiguration input.
+#
+# NOT FITTED ON REV 1.0. This is safe to build anyway: IO33's internal pull-up
+# holds the input high with nothing connected, so an unfitted board reads
+# "not pressed" forever and none of this ever fires.
+#
+# WHY IO33 AND NOT IO0
+#
+# IO0 is broken out and unused on rev 1.0, which makes it look like the obvious
+# choice. It is not. IO0 is a strapping pin: held low at reset the ESP32 enters
+# the serial bootloader instead of running firmware. An external button is
+# exactly the thing that gets stuck, corroded, iced, or pressed by someone
+# during a power cycle -- and the failure would be a bridge that silently never
+# boots, with no LEDs and no network, which is about the worst symptom to
+# diagnose on a wall outdoors. Same disqualification for IO2, IO5, IO12, IO15.
+#
+# IO33 has an internal pull-up, is not a strapping pin and is not input-only.
+#
+# WHAT IT DOES
+#
+#   tap (under 2 s)   identify -- all three LEDs flash, so you can confirm you
+#                     are standing at the right box before doing anything to it
+#   hold 10-30 s      factory reset: wipes Wi-Fi credentials and every stored
+#                     preference, then reboots into onboarding
+#
+# Ten seconds is deliberate. This is the one control that can strand the bridge
+# off the network, so it must be impossible to do by brushing against it, and
+# impossible to do without meaning it. A hold longer than 30 s does nothing at
+# all -- that is a stuck contact, not a person.
+
+binary_sensor:
+  - platform: gpio
+    id: reset_input
+    name: "Reset Input"
+    entity_category: diagnostic
+    disabled_by_default: true      # nothing to see unless the hardware exists
+    pin:
+      number: GPIO33
+      mode:
+        input: true
+        pullup: true
+      inverted: true               # contact closes to GND
+    filters:
+      - delayed_on: 50ms           # debounce; a wet contact chatters
+      - delayed_off: 50ms
+    on_click:
+      # Longest match first -- ESPHome evaluates these in order.
+      - min_length: 10s
+        max_length: 30s
+        then:
+          - logger.log:
+              level: WARN
+              format: "Reset button held: wiping all preferences and rebooting"
+          - repeat:
+              count: 6
+              then:
+                - output.turn_on: led_fault
+                - delay: 80ms
+                - output.turn_off: led_fault
+                - delay: 80ms
+          - lambda: |-
+              global_preferences->reset();
+              App.safe_reboot();
+      - min_length: 50ms
+        max_length: 2s
+        then:
+          - logger.log: "Reset button tapped: identify"
+          - repeat:
+              count: 3
+              then:
+                - output.turn_on: led_wifi
+                - output.turn_on: led_bus
+                - output.turn_on: led_fault
+                - delay: 150ms
+                - output.turn_off: led_wifi
+                - output.turn_off: led_bus
+                - output.turn_off: led_fault
+                - delay: 150ms

@@ -1,0 +1,123 @@
+# Genset RS-485 bridge, running on a SPARE b-hydro carrier board.
+#
+# PURPOSE: prove the whole stack -- firmware, 12 V power, RS-485, Home Assistant,
+# Grafana -- on hardware you already own, before committing to a PCB order.
+# This is a BENCH / PROVE-OUT config, not the permanent install. See the caveats.
+#
+# ---------------------------------------------------------------------------
+# WHY THE PINS ARE DIFFERENT
+#
+# The b-hydro carrier already uses every pin the standard build wants:
+#     GPIO16 = PUMP_DOWN_IO16      GPIO17 = PUMP_UP_IO17      GPIO4 = PUMP_A_IO4
+# All three drive pump MOSFET gates. Using the default pinout would switch them.
+#
+# So the bus moves onto the spare screw terminals (J23 and J18), which expose
+# IO0, IO2, IO12, IO15, IO27, IO36, IO39 plus 5V / 3V3 / GND. Choosing among
+# those is not free -- most are ESP32 strapping pins:
+#
+#   IO0   must be HIGH at boot (LOW = download mode)          -> avoid
+#   IO12  must be LOW at boot (HIGH selects 1.8 V flash and    -> usable, risky
+#         will stop the module booting)
+#   IO15  must be HIGH at boot                                 -> avoid
+#   IO2   must be LOW or floating at boot                      -> USED for DE/RE
+#   IO27  no strapping function at all                         -> USED for TX
+#   IO36  INPUT ONLY (no output driver) - perfect for UART RX  -> USED for RX
+#   IO39  input only, spare
+#
+# IO2 for DE/RE is deliberate: LOW at boot is both the strapping requirement AND
+# the safe RS-485 state (receive). The two constraints agree instead of fighting.
+# On most DevKitC boards IO2 also drives the blue LED, so it blinks on transmit.
+#
+# ---------------------------------------------------------------------------
+# WIRING -- all into screw terminals, no soldering
+#
+#   MAX485 module          b-hydro carrier
+#   -------------          ---------------
+#   DI                 <-  J18  IO27
+#   RO                 ->  J23  IO36
+#   DE + RE (bridged)  <-  J23  IO2      + 10k RESISTOR TO GND, see below
+#   VCC                <-  J18  3V3      (3.3 V, NOT 5 V -- RO must not drive
+#                                         a 5 V level into the ESP32)
+#   GND                <-  J18  GND
+#   A / B              ->  generator harness data pair
+#
+#   12 V from the generator harness -> J1 (12 V IN, 5.08 mm terminal)
+#
+# >>> FIT A 10k PULLDOWN FROM DE/RE TO GND. <<<
+# Until the firmware configures IO2, roughly 200 ms after power-up, that pin
+# FLOATS. A floating DE on a MAX485 can enable the driver and put this board on
+# the bus while the controller is mid-transaction. The pulldown holds it in
+# receive until software takes over. This is the one part you cannot skip.
+#
+# ---------------------------------------------------------------------------
+# WHAT THIS BOARD DOES AND DOES NOT GIVE YOU
+#
+#   YES  AP63205WU-7 buck, 3.8-32 V in, fixed 5 V 2 A -- covers the 11.4 V crank
+#        dip measured on 2026-08-31 with room to spare
+#   YES  AO3401A reverse-polarity protection, 1.1 A polyfuse
+#   YES  every connection on a screw terminal
+#
+#   NO   12 V TVS. b-hydro skipped it on purpose (documented in its README) and
+#        indoors that is fine. A generator pad is not indoors: the starter is a
+#        large inductive load and the pad is the tallest metal thing in the yard.
+#        FIT AN EXTERNAL TVS (SMBJ16A) ACROSS THE 12 V TERMINAL before this runs
+#        unattended outdoors.
+#   NO   protection on the RS-485 pair (no SM712).
+#   NO   a sensible size. The carrier is 120 x 90 mm and will not fit the
+#        enclosure in 3DPrints/Genset RS485 Box (64 x 86 mm interior).
+#
+# Fine for a bench proof and a temporary hookup. For the permanent install,
+# either spin the small dedicated board or print a larger enclosure.
+# ---------------------------------------------------------------------------
+
+substitutions:
+  name: b-infohub-proto
+  friendly_name: "Genset Proto"
+
+  uart_tx_pin: GPIO27           # J18 SPARE -> MAX485 DI
+  uart_rx_pin: GPIO36           # J23 SPARE -> MAX485 RO  (input-only pin)
+  flow_control_pin: GPIO2       # J23 SPARE -> MAX485 DE+RE, with 10k pulldown
+
+  # Verified on the real controller 2026-08-31.
+  modbus_address: "10"
+  modbus_baud: "9600"
+  modbus_parity: EVEN
+  update_interval: 10s
+  mqtt_prefix: b-infohub-proto
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+packages:
+  base:     !include packages/base.yaml
+  mqtt:     !include packages/mqtt.yaml
+  power:    !include packages/gc1032-power.yaml
+  engine:   !include packages/gc1032-engine.yaml
+  status:   !include packages/gc1032-status.yaml
+  alarms:   !include packages/gc1032-alarms.yaml
+  unmapped: !include packages/gc1032-unmapped.yaml
+  # control: !include packages/gc1032-control.yaml   # see its header first
+
+uart:
+  id: rs485_uart
+  tx_pin: ${uart_tx_pin}
+  rx_pin: ${uart_rx_pin}
+  baud_rate: ${modbus_baud}
+  parity: ${modbus_parity}
+  stop_bits: 1
+  data_bits: 8
+
+modbus:
+  id: rs485_bus
+  uart_id: rs485_uart
+  flow_control_pin: ${flow_control_pin}
+  turnaround_time: 200ms
+
+modbus_controller:
+  - id: gc1032
+    address: ${modbus_address}
+    modbus_id: rs485_bus
+    update_interval: ${update_interval}
+    setup_priority: -10

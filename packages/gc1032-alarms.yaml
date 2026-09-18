@@ -1,0 +1,498 @@
+# GENERATED FILE -- DO NOT EDIT.
+# Regenerate with: python3 tools/gen_alarms.py
+# Source: vendor/Briggs_Stratton_GC-1032.json  (genmon alarm_conditions)
+#
+# 51 fault conditions decoded from raw registers 0x0040-0x004F, which are polled
+# as internal sensors in gc1032-status.yaml.
+#
+# Decode rule: asserted when (raw & mask) == value. The fault nibbles are ACTIVE LOW
+# (mask f000 / value 0000), so a nibble of zero means the fault IS present. This is
+# the single most common thing to get backwards on this controller.
+
+binary_sensor:
+
+  - platform: template
+    name: "Low Oil Pressure"
+    id: low_oil_pressure
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_40).state)) return {};
+      return (((uint16_t) id(alarm_reg_40).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "High Coolant Temperature"
+    id: high_coolant_temperature
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_40).state)) return {};
+      return (((uint16_t) id(alarm_reg_40).state) & 0x0F00) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0040 = 0x1100), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Low Fuel Level"
+    id: low_fuel_level
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_40).state)) return {};
+      return (((uint16_t) id(alarm_reg_40).state) & 0x00F0) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0040 = 0x1100), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Water Level Switch"
+    id: water_level_switch
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_40).state)) return {};
+      return (((uint16_t) id(alarm_reg_40).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Engine Under Speed"
+    id: engine_under_speed
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_41).state)) return {};
+      return (((uint16_t) id(alarm_reg_41).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Engine Over Speed"
+    id: engine_over_speed
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_41).state)) return {};
+      return (((uint16_t) id(alarm_reg_41).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Engine Failed to Start"
+    id: engine_failed_to_start
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_41).state)) return {};
+      return (((uint16_t) id(alarm_reg_41).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Engine Failed to Stop"
+    id: engine_failed_to_stop
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_41).state)) return {};
+      return (((uint16_t) id(alarm_reg_41).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Generator Low Frequency"
+    id: generator_low_frequency
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_42).state)) return {};
+      return (((uint16_t) id(alarm_reg_42).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Generator High Frequency"
+    id: generator_high_frequency
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_42).state)) return {};
+      return (((uint16_t) id(alarm_reg_42).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Generator High Current"
+    id: generator_high_current
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_43).state)) return {};
+      return (((uint16_t) id(alarm_reg_43).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Generator Overload"
+    id: generator_overload
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_43).state)) return {};
+      return (((uint16_t) id(alarm_reg_43).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Unbalanced Load"
+    id: unbalanced_load
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_43).state)) return {};
+      return (((uint16_t) id(alarm_reg_43).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Emergency Stop"
+    id: emergency_stop
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_43).state)) return {};
+      return (((uint16_t) id(alarm_reg_43).state) & 0x000F) == 0x0000;
+
+  # UNVERIFIED DECODE -- genmon types this as `regex`, not `bits`.
+  # Confirm against the controller's own display before trusting it.
+  - platform: template
+    name: "Maintenance Required"
+    id: maintenance_required
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_44).state)) return {};
+      return ((((uint16_t) id(alarm_reg_44).state) & 0x0F00) >> 8) == 1;
+
+  - platform: template
+    name: "Battery Low Voltage"
+    id: battery_low_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_45).state)) return {};
+      return (((uint16_t) id(alarm_reg_45).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Battery High Voltage"
+    id: battery_high_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_45).state)) return {};
+      return (((uint16_t) id(alarm_reg_45).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Temperature Circuit Open"
+    id: temperature_circuit_open
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_45).state)) return {};
+      return (((uint16_t) id(alarm_reg_45).state) & 0x00F0) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0046 = 0x0100), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Fuel Theft"
+    id: fuel_theft
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_46).state)) return {};
+      return (((uint16_t) id(alarm_reg_46).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Magnetic Pick Up Fault"
+    id: magnetic_pick_up_fault
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_46).state)) return {};
+      return (((uint16_t) id(alarm_reg_46).state) & 0x0F00) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0046 = 0x0100), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Oil Pressure Open Circuit"
+    id: oil_pressure_open_circuit
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_46).state)) return {};
+      return (((uint16_t) id(alarm_reg_46).state) & 0x00F0) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0046 = 0x0100), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Auxiliary Input I"
+    id: auxiliary_input_i
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_46).state)) return {};
+      return (((uint16_t) id(alarm_reg_46).state) & 0x000F) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0047 = 0x0011), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Auxiliary Input A"
+    id: auxiliary_input_a
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_47).state)) return {};
+      return (((uint16_t) id(alarm_reg_47).state) & 0xF000) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0047 = 0x0011), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Auxiliary Input B"
+    id: auxiliary_input_b
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_47).state)) return {};
+      return (((uint16_t) id(alarm_reg_47).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Auxiliary Input C"
+    id: auxiliary_input_c
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_47).state)) return {};
+      return (((uint16_t) id(alarm_reg_47).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Auxiliary Input D"
+    id: auxiliary_input_d
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_47).state)) return {};
+      return (((uint16_t) id(alarm_reg_47).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Auxiliary Input E"
+    id: auxiliary_input_e
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_48).state)) return {};
+      return (((uint16_t) id(alarm_reg_48).state) & 0xF000) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0048 = 0x1001), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Auxiliary Input F"
+    id: auxiliary_input_f
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_48).state)) return {};
+      return (((uint16_t) id(alarm_reg_48).state) & 0x0F00) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x0048 = 0x1001), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Auxiliary Input G"
+    id: auxiliary_input_g
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_48).state)) return {};
+      return (((uint16_t) id(alarm_reg_48).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Auxiliary Input H"
+    id: auxiliary_input_h
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_48).state)) return {};
+      return (((uint16_t) id(alarm_reg_48).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Gen L1 Phase Low Voltage"
+    id: gen_l1_phase_low_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_49).state)) return {};
+      return (((uint16_t) id(alarm_reg_49).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Gen L1 Phase High Voltage"
+    id: gen_l1_phase_high_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_49).state)) return {};
+      return (((uint16_t) id(alarm_reg_49).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Gen L2 Phase Low Voltage"
+    id: gen_l2_phase_low_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_49).state)) return {};
+      return (((uint16_t) id(alarm_reg_49).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "Gen L2 Phase High Voltage"
+    id: gen_l2_phase_high_voltage
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_49).state)) return {};
+      return (((uint16_t) id(alarm_reg_49).state) & 0x000F) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004A = 0x0000), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Gen L3 Phase Low Voltage"
+    id: gen_l3_phase_low_voltage
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4a).state)) return {};
+      return (((uint16_t) id(alarm_reg_4a).state) & 0xF000) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004A = 0x0000), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Gen L3 Phase High Voltage"
+    id: gen_l3_phase_high_voltage
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4a).state)) return {};
+      return (((uint16_t) id(alarm_reg_4a).state) & 0x0F00) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004A = 0x0000), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "DG Phase Rotation"
+    id: dg_phase_rotation
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4a).state)) return {};
+      return (((uint16_t) id(alarm_reg_4a).state) & 0x00F0) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004A = 0x0000), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Mains Phase Rotation"
+    id: mains_phase_rotation
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4a).state)) return {};
+      return (((uint16_t) id(alarm_reg_4a).state) & 0x000F) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004B = 0x0F01), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Fuel Cap Open Circuit"
+    id: fuel_cap_open_circuit
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4b).state)) return {};
+      return (((uint16_t) id(alarm_reg_4b).state) & 0xF000) == 0x0000;
+
+  # NOT PRESENT on this unit. Asserted in the healthy baseline capture
+  # (vendor/baseline-2026-08-31.json, reg 0x004B = 0x0F01), which means
+  # nothing is wired to this input rather than that it is faulted. Left in place,
+  # disabled, so it can be switched on if the sensor is ever fitted.
+  - platform: template
+    name: "Extended Over Load Trip"
+    id: extended_over_load_trip
+    device_class: problem
+    disabled_by_default: true
+    lambda: |-
+      if (isnan(id(alarm_reg_4b).state)) return {};
+      return (((uint16_t) id(alarm_reg_4b).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "High Oil Pressure Detected"
+    id: high_oil_pressure_detected
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4b).state)) return {};
+      return (((uint16_t) id(alarm_reg_4b).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Alternator Input Lost"
+    id: alternator_input_lost
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4c).state)) return {};
+      return (((uint16_t) id(alarm_reg_4c).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "High Voltage Warning (Ph-Ph)"
+    id: high_voltage_warning_ph_ph
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4c).state)) return {};
+      return (((uint16_t) id(alarm_reg_4c).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "High Voltage Warning 1 (Ph-Ph)"
+    id: high_voltage_warning_1_ph_ph
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4c).state)) return {};
+      return (((uint16_t) id(alarm_reg_4c).state) & 0x00F0) == 0x0000;
+
+  - platform: template
+    name: "High Voltage Warning 2 (Ph-Ph)"
+    id: high_voltage_warning_2_ph_ph
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4c).state)) return {};
+      return (((uint16_t) id(alarm_reg_4c).state) & 0x000F) == 0x0000;
+
+  - platform: template
+    name: "Low Voltage Failure 1 (Ph-Ph)"
+    id: low_voltage_failure_1_ph_ph
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4d).state)) return {};
+      return (((uint16_t) id(alarm_reg_4d).state) & 0xF000) == 0x0000;
+
+  - platform: template
+    name: "Low Voltage Failure 2 (Ph-Ph)"
+    id: low_voltage_failure_2_ph_ph
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4d).state)) return {};
+      return (((uint16_t) id(alarm_reg_4d).state) & 0x0F00) == 0x0000;
+
+  - platform: template
+    name: "Generator Failed to Start"
+    id: generator_failed_to_start
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0020) == 0x0020;
+
+  - platform: template
+    name: "General Notification"
+    id: general_notification
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0001) == 0x0001;
+
+  - platform: template
+    name: "General Warning"
+    id: general_warning
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0002) == 0x0002;
+
+  - platform: template
+    name: "Electrical Trip"
+    id: electrical_trip
+    device_class: problem
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x0004) == 0x0004;

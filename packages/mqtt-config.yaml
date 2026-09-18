@@ -1,0 +1,112 @@
+# Point MQTT at a broker from the UI, without a rebuild.
+#
+# HOME ASSISTANT NEEDS NOTHING HERE, and that surprises people. The bridge is
+# the SERVER for the native API (port 6053); Home Assistant is the client and
+# finds it over mDNS. There is no "Home Assistant address" to set because the
+# connection runs the other way.
+#
+# MQTT is the opposite: the bridge is the client, so it has to be told where
+# the broker is. That was compile-time, out of secrets.yaml -- which meant
+# moving brokers required an edit and a reflash.
+#
+# It does not have to be. MQTTClientComponent exposes set_broker_address(),
+# set_broker_port(), set_username() and set_password() as public methods; they
+# are simply not surfaced as YAML actions. A lambda can call them, and the
+# values below persist in NVS, so the broker survives reboots and OTAs and the
+# compiled-in secret becomes nothing more than a default.
+#
+# The settings are applied at boot BEFORE the client is allowed to connect --
+# packages/mqtt.yaml sets enable_on_boot: false precisely so that the first
+# connection attempt uses these values rather than the baked-in ones.
+
+text:
+  - platform: template
+    name: "MQTT Broker"
+    id: cfg_mqtt_host
+    icon: mdi:server-network
+    entity_category: config
+    optimistic: true
+    mode: text
+    min_length: 0
+    max_length: 64
+    restore_value: true
+
+  - platform: template
+    name: "MQTT Username"
+    id: cfg_mqtt_user
+    icon: mdi:account
+    entity_category: config
+    optimistic: true
+    mode: text
+    min_length: 0
+    max_length: 48
+    restore_value: true
+
+  - platform: template
+    name: "MQTT Password"
+    id: cfg_mqtt_pass
+    icon: mdi:form-textbox-password
+    entity_category: config
+    optimistic: true
+    mode: password
+    min_length: 0
+    max_length: 64
+    restore_value: true
+
+number:
+  - platform: template
+    name: "MQTT Port"
+    id: cfg_mqtt_port
+    icon: mdi:numeric
+    entity_category: config
+    optimistic: true
+    min_value: 1
+    max_value: 65535
+    step: 1
+    initial_value: 1883
+    restore_value: true
+
+script:
+  # Shared by the boot hook and the Apply button, so there is exactly one
+  # definition of "how settings reach the client".
+  - id: apply_mqtt_settings
+    then:
+      - lambda: |-
+          if (!id(cfg_mqtt_host).state.empty()) {
+            id(mqtt_client).set_broker_address(id(cfg_mqtt_host).state);
+            id(mqtt_client).set_broker_port((uint16_t) id(cfg_mqtt_port).state);
+            id(mqtt_client).set_username(id(cfg_mqtt_user).state);
+            id(mqtt_client).set_password(id(cfg_mqtt_pass).state);
+            ESP_LOGI("mqtt_cfg", "Broker set to %s:%u",
+                     id(cfg_mqtt_host).state.c_str(),
+                     (unsigned) id(cfg_mqtt_port).state);
+          }
+
+button:
+  - platform: template
+    name: "Apply MQTT"
+    icon: mdi:content-save-cog
+    entity_category: config
+    on_press:
+      - script.execute: apply_mqtt_settings
+      # Bounce the client so the new address is actually used. Without this the
+      # setters take effect only on the next reconnect, which on a working
+      # broker may never come.
+      - if:
+          condition:
+            lambda: 'return id(feat_mqtt).state;'
+          then:
+            - mqtt.disable:
+            - delay: 500ms
+            - mqtt.enable:
+            - logger.log: "MQTT reconnecting with the new broker"
+          else:
+            - logger.log: "Saved. Turn on 'Feature: MQTT' to connect."
+
+esphome:
+  on_boot:
+    # -10 runs after preferences are restored but before the feature switch
+    # brings the client up, so the very first connection uses these values.
+    - priority: -10
+      then:
+        - script.execute: apply_mqtt_settings

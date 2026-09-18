@@ -1,0 +1,100 @@
+# Exercise cycle: observation and history.
+#
+# WHY THERE IS NO SCHEDULE-SETTING HERE
+#
+# You asked to set exercise times. This controller does not expose them.
+#
+#   * The vendor map (vendor/Briggs_Stratton_GC-1032.json) documents 76 INPUT
+#     registers and exactly one holding section (`thresholdvoltage`). There is
+#     no day, hour, duration or interval setting register anywhere in it.
+#   * Exercise appears only as STATUS, in input register 0x004F:
+#         mask 0x7F00 == 0x7100 -> "Exercising"
+#         mask 0x3800 == 0x3000 -> "Scheduled Exercise in Progress"
+#   * The field test proved FC03 reads return NOTHING across 0x0000-0x01FF, so
+#     there is no readable configuration space to search for undocumented
+#     schedule registers either.
+#
+# The only remaining route would be blind writes to undocumented holding
+# addresses. On a controller whose holding space also carries protection
+# setpoints and (on some installs) transfer-switch actuation, that is not a
+# reasonable thing to guess at. Set exercise times at the controller keypad.
+#
+# What this file does instead is make the exercise cycle fully OBSERVABLE, and
+# it fills in two keys ha-energytrak already has but the cloud reports poorly:
+# last_exercise_at and last_exercise_duration_seconds.
+
+globals:
+  - id: exercise_start_ts
+    type: uint32_t
+    restore_value: true      # survives a reboot mid-exercise
+    initial_value: '0'
+  - id: last_exercise_ts
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+  - id: last_exercise_secs
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+
+binary_sensor:
+  - platform: template
+    name: "Exercising"
+    id: exercising
+    icon: mdi:heart-pulse
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x7F00) == 0x7100;
+    on_press:
+      then:
+        - lambda: |-
+            auto t = id(ha_time).now();
+            id(exercise_start_ts) = t.is_valid() ? (uint32_t) t.timestamp : 0;
+        - logger.log: "Exercise cycle started"
+    on_release:
+      then:
+        # Only record a duration if we saw the start AND have real time. A
+        # bridge that boots mid-exercise, or before HA time has synced, would
+        # otherwise invent a duration measured from the epoch.
+        - lambda: |-
+            auto t = id(ha_time).now();
+            if (id(exercise_start_ts) != 0 && t.is_valid() &&
+                (uint32_t) t.timestamp > id(exercise_start_ts)) {
+              id(last_exercise_secs) = (uint32_t) t.timestamp - id(exercise_start_ts);
+              id(last_exercise_ts)   = (uint32_t) t.timestamp;
+            }
+            id(exercise_start_ts) = 0;
+        - logger.log: "Exercise cycle ended"
+
+  - platform: template
+    name: "Scheduled Exercise in Progress"
+    id: scheduled_exercise
+    icon: mdi:calendar-clock
+    lambda: |-
+      if (isnan(id(alarm_reg_4f).state)) return {};
+      return (((uint16_t) id(alarm_reg_4f).state) & 0x3800) == 0x3000;
+
+sensor:
+  - platform: template
+    name: "Last Exercise Duration"
+    id: last_exercise_duration_seconds
+    unit_of_measurement: s
+    device_class: duration
+    accuracy_decimals: 0
+    icon: mdi:timer-outline
+    update_interval: 60s
+    lambda: 'return id(last_exercise_secs) == 0 ? NAN : (float) id(last_exercise_secs);'
+
+text_sensor:
+  - platform: template
+    name: "Last Exercise"
+    id: last_exercise_at
+    icon: mdi:calendar-check
+    update_interval: 60s
+    lambda: |-
+      if (id(last_exercise_ts) == 0) return {};
+      ESPTime t = ESPTime::from_epoch_local(id(last_exercise_ts));
+      char buf[32];   // 24 was exact-fit for a 4-digit year; the compiler was right to complain
+      snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d",
+               t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+      return {std::string(buf)};

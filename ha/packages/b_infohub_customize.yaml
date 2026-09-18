@@ -1,0 +1,89 @@
+# B-Infohub -> stable metric attributes
+# ---------------------------------------------------------------------------
+# Drop in <config>/packages/ alongside grafana_push.yaml and energytrak_metrics.yaml.
+#
+# WHY A SEPARATE ATTRIBUTE NAMESPACE (`infohub_field`, NOT `energytrak_field`)
+#
+# grafana_push.yaml selects each metric with
+#   ... | selectattr('energytrak_field', 'eq', f) | map(attribute='state') | first
+#
+# That `first` is the problem. The GC-1032 publishes battery voltage, engine speed,
+# engine hours, starts, trips, grid voltage and running state -- every one of which
+# the energytrak integration ALSO publishes. Stamping `energytrak_field:
+# battery_voltage` on the ESPHome entity would put two candidates in that list and
+# `first` would pick whichever HA happened to order first. It would look like it
+# worked. Then one restart later the dashboard would silently be reading the other
+# source, and no error would ever appear anywhere.
+#
+# So this file uses `infohub_field`, and b_infohub_push.yaml writes a separate
+# `genset` measurement (Prometheus: genset_*). The existing 33 panels and every
+# alert rule on generator_* keep working, untouched. When you are satisfied the
+# local bridge is better -- and it is, it has 51 decoded faults against the cloud
+# poller's one -- you can cut the old panels over deliberately rather than by
+# accident.
+#
+# ENTITY IDS: VERIFY BEFORE YOU TRUST THIS FILE
+#
+# These assume the ESPHome device friendly_name is "Genset" (set in
+# genset-gc1032.yaml), giving sensor.genset_<slug>. If HA already had a device
+# claiming those ids you will get a `_2` suffix and the entries below will bind to
+# nothing -- silently, because customize does not warn about unknown entity ids.
+# Check in Developer Tools -> States, filter on `genset`, before relying on this.
+# This is the one file in the pipeline that must name entity ids; everything
+# downstream selects on the attributes stamped here.
+
+homeassistant:
+  # Mark everything from the bridge in one shot, so the alarm count below can find
+  # the fault entities without listing all 51 of them.
+  customize_glob:
+    "sensor.genset_*":
+      infohub_device: true
+    "binary_sensor.genset_*":
+      infohub_device: true
+    "text_sensor.genset_*":
+      infohub_device: true
+
+  customize:
+    # --- engine & battery ---
+    sensor.genset_battery_voltage:        {infohub_field: battery_voltage}
+    sensor.genset_engine_speed:           {infohub_field: engine_speed}
+    sensor.genset_oil_pressure:           {infohub_field: oil_pressure_bar}
+    sensor.genset_oil_pressure_psi:       {infohub_field: oil_pressure_psi}
+    sensor.genset_coolant_temperature:    {infohub_field: coolant_temp_c}
+    sensor.genset_engine_run_time:        {infohub_field: engine_hours}
+    sensor.genset_number_of_starts:       {infohub_field: starts_count}
+    sensor.genset_number_of_trips:        {infohub_field: trips_count}
+
+    # --- generator output ---
+    sensor.genset_generator_l1_voltage:   {infohub_field: gen_l1_voltage}
+    sensor.genset_generator_l2_voltage:   {infohub_field: gen_l2_voltage}
+    sensor.genset_generator_l1_l2_voltage: {infohub_field: gen_output_voltage}
+    sensor.genset_generator_l1_frequency: {infohub_field: gen_frequency}
+    sensor.genset_generator_l1_current:   {infohub_field: gen_l1_current}
+    sensor.genset_generator_l2_current:   {infohub_field: gen_l2_current}
+    sensor.genset_total_power:            {infohub_field: load_power_kw}
+    sensor.genset_percentage_load:        {infohub_field: load_percent}
+    sensor.genset_total_apparent_power:   {infohub_field: load_kva}
+    sensor.genset_average_power_factor:   {infohub_field: power_factor}
+    sensor.genset_cumulative_energy:      {infohub_field: cumulative_kwh}
+
+    # --- utility / mains ---
+    sensor.genset_utility_l1_voltage:     {infohub_field: utility_l1_voltage}
+    sensor.genset_utility_l1_l2_voltage:  {infohub_field: utility_voltage}
+    sensor.genset_utility_l1_frequency:   {infohub_field: utility_frequency}
+
+    # --- state ---
+    binary_sensor.genset_engine_running:      {infohub_field: running}
+    binary_sensor.genset_engine_starting:     {infohub_field: starting}
+    binary_sensor.genset_utility_power_failure: {infohub_field: utility_failure}
+    binary_sensor.genset_common_shutdown:     {infohub_field: common_shutdown}
+    binary_sensor.genset_fuel_relay_open:     {infohub_field: fuel_relay_open}
+    binary_sensor.genset_bridge_connected:    {infohub_field: bridge_connected}
+    sensor.genset_power_status:               {infohub_field: power_status}
+    sensor.genset_switch_status:              {infohub_field: switch_status}
+    sensor.genset_engine_state:               {infohub_field: engine_state}
+
+    # --- bridge health ---
+    sensor.genset_wi_fi_signal:           {infohub_field: wifi_rssi}
+    sensor.genset_uptime:                 {infohub_field: bridge_uptime}
+    sensor.genset_esp_internal_temperature: {infohub_field: bridge_temp_c}

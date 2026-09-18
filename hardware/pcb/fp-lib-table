@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "binfohub")(type "KiCad")(uri "${KIPRJMOD}/binfohub.pretty")(options "")(descr "b-hydro project footprints"))
+)

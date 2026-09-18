@@ -1,0 +1,253 @@
+{
+  "board": {
+    "3dviewports": [],
+    "design_settings": {
+      "defaults": {
+        "board_outline_line_width": 0.1,
+        "copper_line_width": 0.2,
+        "silk_line_width": 0.15,
+        "silk_text_size_h": 1.0,
+        "silk_text_size_v": 1.0,
+        "silk_text_thickness": 0.15
+      },
+      "rules": {
+        "min_clearance": 0.25,
+        "min_connection": 0.0,
+        "min_copper_edge_clearance": 0.3,
+        "min_hole_clearance": 0.25,
+        "min_hole_to_hole": 0.25,
+        "min_microvia_diameter": 0.2,
+        "min_microvia_drill": 0.1,
+        "min_resolved_spokes": 1,
+        "min_silk_clearance": 0.0,
+        "min_text_height": 0.6,
+        "min_text_thickness": 0.08,
+        "min_through_hole_diameter": 0.3,
+        "min_track_width": 0.2,
+        "min_via_annular_width": 0.15,
+        "min_via_diameter": 0.6,
+        "solder_mask_to_copper_clearance": 0.0,
+        "use_height_for_length_calcs": true
+      },
+      "track_widths": [
+        0.0,
+        0.3,
+        0.5,
+        0.8,
+        1.0
+      ],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        },
+        {
+          "diameter": 0.8,
+          "drill": 0.4
+        }
+      ]
+    },
+    "layer_presets": [],
+    "viewports": []
+  },
+  "boards": [],
+  "cvpcb": {
+    "equivalence_files": []
+  },
+  "libraries": {
+    "pinned_footprint_libs": [],
+    "pinned_symbol_libs": []
+  },
+  "meta": {
+    "filename": "binfohub_bridge.kicad_pro",
+    "version": 3
+  },
+  "net_settings": {
+    "classes": [
+      {
+        "name": "Default",
+        "clearance": 0.25,
+        "track_width": 0.3,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "bus_width": 12,
+        "wire_width": 6,
+        "line_style": 0,
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 2147483647
+      },
+      {
+        "name": "12V",
+        "clearance": 0.25,
+        "track_width": 1.0,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "pcb_color": "rgba(255, 64, 64, 0.8)",
+        "schematic_color": "rgba(200, 0, 0, 1)",
+        "priority": 0
+      },
+      {
+        "name": "5V",
+        "clearance": 0.25,
+        "track_width": 0.8,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "pcb_color": "rgba(255, 160, 0, 0.8)",
+        "schematic_color": "rgba(200,100,0,1)",
+        "priority": 1
+      },
+      {
+        "name": "GND",
+        "clearance": 0.25,
+        "track_width": 0.5,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "pcb_color": "rgba(0, 160, 255, 0.8)",
+        "schematic_color": "rgba(0,80,200,1)",
+        "priority": 2
+      }
+    ],
+    "meta": {
+      "version": 4
+    },
+    "netclass_assignments": [
+      {
+        "netclass": "12V",
+        "pattern": "+12V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "+12V_IH"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "+5V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "12V_IN"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "5V_BUCK"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "BUCK_SW"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "BUS_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "BUS_B"
+      },
+      {
+        "netclass": "GND",
+        "pattern": "GND"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "IH_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "IH_B"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "TERM_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "TERM_B"
+      }
+    ],
+    "netclass_patterns": [
+      {
+        "netclass": "12V",
+        "pattern": "+12V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "+12V_IH"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "+5V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "12V_IN"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "5V_BUCK"
+      },
+      {
+        "netclass": "5V",
+        "pattern": "BUCK_SW"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "BUS_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "BUS_B"
+      },
+      {
+        "netclass": "GND",
+        "pattern": "GND"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "IH_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "IH_B"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "TERM_A"
+      },
+      {
+        "netclass": "RS485",
+        "pattern": "TERM_B"
+      }
+    ]
+  },
+  "pcbnew": {
+    "last_paths": {
+      "gencad": "",
+      "idf": "",
+      "netlist": "",
+      "plot": "gerbers/",
+      "pos_files": "",
+      "specctra_dsn": "",
+      "step": "",
+      "svg": "",
+      "vrml": ""
+    },
+    "page_layout_descr_file": ""
+  },
+  "schematic": {
+    "legacy_lib_dir": "",
+    "legacy_lib_list": []
+  },
+  "sheets": [
+    [
+      "533524c3-af9f-55d5-9b03-860359c2b992",
+      "Root"
+    ]
+  ],
+  "text_variables": {}
+}

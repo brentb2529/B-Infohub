@@ -1,0 +1,21 @@
+** Drc report for binfohub_bridge.kicad_pcb **
+** Created on 2026-08-31T21:52:57 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 1 DRC violations **
+[lib_footprint_mismatch]: Footprint 'TerminalBlock_Phoenix_MPT-0,5-2-2.54_1x02_P2.54mm_Horizontal' does not match copy in library 'TerminalBlock_Phoenix'
+    Local override; warning
+    @(52.5400 mm, 7.0000 mm): Footprint J2
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

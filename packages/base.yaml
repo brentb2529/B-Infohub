@@ -1,0 +1,247 @@
+# Wi-Fi / API / OTA / web server / bridge diagnostics.
+# Standalone — this repo shares nothing with the WaterFurnace project.
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: "Briggs & Stratton GC-1032 RS-485 bridge (InfoHub replacement)"
+  project:
+    name: bbensten.b_infohub
+    version: "1.0.0"
+
+logger:
+  level: INFO
+  # Modbus frames are logged at VERY_VERBOSE. To watch the bus during bring-up:
+  #   logger: {level: VERY_VERBOSE, logs: {modbus: VERY_VERBOSE}}
+  # Leave at INFO for normal running — VERY_VERBOSE over Wi-Fi will drop frames.
+
+wifi:
+  # NO NETWORK IS COMPILED IN. That is deliberate.
+  #
+  # ESPHome allows `networks` to be omitted entirely as long as an `ap:` block
+  # exists, and doing so is what turns first boot into an onboarding flow rather
+  # than a rebuild. Credentials given through any of the three routes below are
+  # written to NVS and used on every subsequent boot, so this is a one-time step
+  # -- and re-flashing does not wipe them.
+  #
+  # It also means secrets.yaml needs no Wi-Fi entries to produce a flashable
+  # image, which matters for a board that may be built before anyone has decided
+  # which SSID it will live on.
+  #
+  # To pre-seed a network instead (skips onboarding entirely), uncomment:
+  #   networks:
+  #     - ssid: !secret wifi_ssid
+  #       password: !secret wifi_password
+  #
+  # The generator runs when the grid is down, so this bridge has to stay up through an
+  # outage. The house is on UPS, so the LAN path survives -- which is what makes a
+  # local bridge a real replacement for the InfoHub's cell modem rather than a
+  # fair-weather one.
+  power_save_mode: none
+  reboot_timeout: 0s          # never self-reboot on Wi-Fi loss; the bus data still matters
+
+  # BLUETOOTH IS OFF WHENEVER WI-FI IS UP.
+  #
+  # ESPHome already stops Improv ADVERTISING on connect, so the bridge is not
+  # discoverable either way. This goes further and takes the radio itself down:
+  # `ble.disable` calls esp_bluedroid_disable() and esp_bt_controller_disable(),
+  # which frees the stack rather than merely silencing it. On a build already at
+  # ~78% RAM that is worth having, and a radio that is off cannot be attacked.
+  #
+  # The 30 s grace on connect lets Improv finish telling a provisioning client
+  # that it succeeded -- yanking the controller mid-handshake leaves the client
+  # showing a failure for a provisioning that actually worked.
+  #
+  # Coming back is deliberately slow. 5 min of CONTINUOUS disconnection, not a
+  # blip: a router reboot must not put Bluetooth back on the air, and the STA is
+  # retrying throughout regardless. Improv then needs its own 10 min before it
+  # advertises, so the radio is up well before anything is listening on it.
+  #
+  # First boot is unaffected -- nothing is provisioned, so BLE is up from the
+  # start and Improv advertises immediately.
+  on_connect:
+    - delay: 30s
+    - ble.disable:
+  on_disconnect:
+    - delay: 5min
+    - if:
+        condition:
+          not:
+            wifi.connected:
+        then:
+          - ble.enable:
+  ap:
+    # Comes up when there is nothing provisioned, and again whenever a
+    # provisioned network has been unreachable for ap_timeout -- so a router
+    # swap does not mean a trip up a ladder with a laptop.
+    ssid: "${name} Setup"
+    password: !secret ap_password
+    # One hour. This governs ONLY the fallback after a KNOWN network goes away.
+    # First boot with nothing provisioned still brings the AP up immediately --
+    # WiFiComponent::setup() does that from its `else if (has_ap())` branch and
+    # never consults this value. Onboarding is unaffected.
+    #
+    # This was briefly 0s -- never fall back at all. That was wrong, and the
+    # reason is worth writing down.
+    #
+    # The two failure modes are NOT symmetrical:
+    #
+    #   Network comes back (router reboot, ISP blip, AP update)
+    #       The STA retries forever and reconnects on its own. Nothing needed.
+    #       Down for a day and back? It rejoins. This case never needs a human.
+    #
+    #   Network is REPLACED (new router, new SSID, ISP swap)
+    #       The stored credentials are now wrong and no amount of retrying will
+    #       help. Something has to carry new ones to the bridge.
+    #
+    # At 0s the only route for the second case was Bluetooth, and Bluetooth
+    # means standing within a few metres of the box -- which for a wall-mounted
+    # unit means a ladder. Wi-Fi range is the whole point: with the fallback AP
+    # up you can reconfigure from the ground, or from indoors.
+    #
+    # One hour is long enough that no router reboot, firmware update or channel
+    # change ever triggers it, and short enough that a genuinely dead network is
+    # recoverable the same day. The AP is WPA2 with ap_password, not open, and
+    # ESPHome tears it down the moment a real network is reachable again.
+    ap_timeout: ${ap_fallback_after}
+
+captive_portal:
+
+# ---------------------------------------------------------------------------
+# THREE WAYS TO ONBOARD. All three are live at once; use whichever is to hand.
+#
+#   1. USB serial   -- improv_serial, below. During or after the first flash,
+#                      over the same cable. Easiest, and the only one available
+#                      before the board leaves the bench.
+#   2. Bluetooth    -- esp32_improv. The Home Assistant companion app, or
+#                      improv-wifi.com in Chrome. This is the one that matters
+#                      at the generator pad, where you do not want to be
+#                      standing with a laptop.
+#   3. Setup Wi-Fi  -- the "${name} Setup" AP above plus captive_portal. Join
+#                      it and a configuration page opens by itself.
+# ---------------------------------------------------------------------------
+
+esp32_improv:
+  # No authorizer: there is no button on rev 1.0 to act as one, so provisioning
+  # cannot be gated behind a physical press. The exposure is small and bounded
+  # -- an attacker needs to be within Bluetooth range of the generator, and
+  # succeeds only in joining the bridge to their own network; the API stays
+  # encrypted and the data stays unreadable without the key. Worth knowing
+  # rather than worth losing the feature over.
+  authorizer: none
+  # THE SAFETY VALVE, and the reason a power cycle is always a way back in.
+  # With ap_timeout at 0 there is no setup SSID to fall back to, so without
+  # this a changed router SSID would mean opening a sealed enclosure to reach
+  # a USB port.
+  #
+  # 60 s, measured from boot (WiFiComponent::setup() stamps last_connected_).
+  # So: power-cycle the bridge, wait a minute, and if it cannot get onto the
+  # network Bluetooth provisioning is there. That is the whole recovery story,
+  # and it needs no tools and no ladder-with-laptop.
+  #
+  # A SHORT TIMEOUT COSTS NOTHING HERE, which is worth being explicit about
+  # because 60 s would be reckless on its own. Keeping Bluetooth off during
+  # ordinary running is NOT this timer's job -- it is the `on_connect` /
+  # `on_disconnect` pair above, which takes the radio itself down 30 s after
+  # connecting and will not bring it back until Wi-Fi has been gone for five
+  # continuous minutes. While the radio is off Improv cannot advertise no
+  # matter what its timer says. So:
+  #
+  #   connected            radio off, nothing advertising
+  #   brief outage         radio stays off; STA just retries
+  #   outage over 5 min    radio returns, Improv advertises
+  #   reboot, cannot join  radio up from boot, Improv advertises after 60 s
+  #
+  # Provisioning still requires standing next to it, which is a better gate
+  # than an SSID that anyone within Wi-Fi range can see.
+  wifi_timeout: 60s
+  # Deliberately NOT status_indicator: led_wifi. The LED is already driven every
+  # 250 ms by packages/status-leds.yaml, and two writers on one output means the
+  # last one each cycle wins -- an indicator that flickers meaninglessly. That
+  # file already blinks WIFI while the AP is up, which covers provisioning.
+  on_provisioning:
+    - logger.log: "Improv: provisioning over Bluetooth"
+  on_provisioned:
+    - logger.log: "Improv: credentials accepted and stored"
+
+# Provisioning over the USB cable, using the same protocol. Costs almost
+# nothing and removes the chicken-and-egg on a bench build: you can set the
+# network immediately after the first flash without unplugging anything.
+improv_serial:
+
+# On by default, declared so nobody "cleans" it away. This is what makes the bridge
+# reachable as http://${name}.local and what HA's ESPHome discovery listens for.
+mdns:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+  - platform: web_server        # lets you drag a .bin onto the web UI if OTA-over-API fails
+
+web_server:
+  port: 80
+  version: 3
+  local: true                   # serve the UI assets from flash, not a CDN
+  auth:
+    type: digest              # basic sends the password reversibly; digest does not
+    username: !secret web_username
+    password: !secret web_password
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      entity_category: diagnostic
+    ssid:
+      name: "Connected SSID"
+      entity_category: diagnostic
+
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic
+
+sensor:
+  - platform: wifi_signal
+    name: "Wi-Fi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - platform: uptime
+    name: "Uptime"
+    entity_category: diagnostic
+
+  - platform: internal_temperature
+    name: "ESP Internal Temperature"
+    entity_category: diagnostic
+    # Worth watching. This board lives on a generator pad; if this climbs past ~80 C
+    # in summer the enclosure needs shade or a vent.
+
+button:
+  - platform: restart
+    name: "Restart Bridge"
+    entity_category: diagnostic
+
+  # The deliberate reconfiguration path, for while the bridge is still
+  # reachable. This is a FULL preference wipe, not a Wi-Fi-only one, because
+  # ESPHome has no per-key erase: WiFiComponent::clear_sta() only empties the
+  # in-memory list, and save_wifi_sta("","") is worse than useless -- the
+  # loader accepts an empty SSID as a configured network, so the bridge would
+  # come up unable to connect AND unable to offer an AP. Locked out.
+  #
+  # Wiped: Wi-Fi credentials, feature switch states, exercise history, bus
+  # counters, safe-mode counter. NOT wiped: the API key, OTA password and web
+  # login, which are compiled in rather than stored.
+  #
+  # Afterwards it boots with nothing provisioned, so the setup AP returns and
+  # onboarding starts over.
+  - platform: factory_reset
+    name: "Factory Reset"
+    entity_category: config

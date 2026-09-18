@@ -1,0 +1,158 @@
+# On-board status LEDs (B-Infohub bridge PCB rev 1.0)
+#
+# These are the only feedback you get standing at the generator with no network,
+# which is exactly the situation during first bring-up. They are worth getting
+# right.
+#
+# Five indicators, read through light pipes in the enclosure lid. Two are wired
+# so they cannot lie, and need no firmware:
+#
+#   D5 PWR    green   hard-wired to the 5 V rail. Dark means the buck is dead,
+#                     and no amount of firmware would have told you that.
+#   D9 TX     yellow  driven from the RS-485 DE line (GPIO4). Flashes on every
+#                     transmission with no GPIO and no code, so it proves the
+#                     bridge is TALKING rather than merely powered.
+#
+#   D6 WIFI   blue    GPIO25   D7 BUS  green  GPIO26   D8 FAULT  red  GPIO27
+#
+# WHAT CHANGED, AND WHY IT MATTERED
+#
+# The BUS LED used to be `!isnan(alarm_reg_4f.state)`, on the theory that a
+# dropped Modbus link stops publishing and the state goes NaN. It does not.
+# ESPHome sensors RETAIN their last value when a poll fails -- nothing resets
+# them -- so that LED would have sat there solid green with the RS-485 pair
+# cut, which is the single most misleading thing an indicator can do during
+# bring-up.
+#
+# It now reads `bus_healthy` from packages/diagnostics.yaml, which is measured
+# the one way that cannot lie: time since a register last arrived.
+#
+# READING THE LIGHTS
+#
+# Three LEDs, four states each. The patterns are chosen so the states that
+# demand DIFFERENT ACTIONS never look alike -- that is the whole job of an
+# indicator, and the reason "off" is never used for two different meanings.
+#
+#   WIFI (blue)
+#     solid        on the network -- confirmation the instant Wi-Fi associates
+#     solid with   on the network AND Home Assistant connected: a brief wink
+#     a wink       every 2 s, so "fully working" is visibly alive
+#     fast 2 Hz    setup AP is up -- join "b-infohub Setup" and configure
+#     off          no network and no AP: associating, or the radio is down
+#
+#   BUS (green)
+#     solid        controller answering cleanly
+#     double-pulse healthy AND serving an InfoHub through the proxy
+#     slow 1 Hz    answering, but missing polls (success rate under 90%)
+#                  -> wiring, termination or turnaround time
+#     off          NOTHING HEARD -- check pair, address, baud, parity
+#
+#   FAULT (red)
+#     fast 2 Hz    SAFE MODE -- repeated bad boots. Push firmware, not a
+#                  spanner. Takes priority over everything else.
+#     solid        generator shut down or tripped
+#     slow 1 Hz    warning only: running, but something wants attention
+#     off          clear
+#
+# On boot all three sweep once. That proves the LEDs, the light pipes and the
+# GPIOs in one go -- worth having when the board is already sealed in a box.
+
+esphome:
+  on_boot:
+    # Sweep once at startup. Proves all three LEDs, their series resistors, the
+    # light pipes and the GPIOs -- in a sealed outdoor box that is the only
+    # chance you get to check them without opening it.
+    - priority: -100
+      then:
+        - repeat:
+            count: 2
+            then:
+              - output.turn_on: led_wifi
+              - delay: 120ms
+              - output.turn_off: led_wifi
+              - output.turn_on: led_bus
+              - delay: 120ms
+              - output.turn_off: led_bus
+              - output.turn_on: led_fault
+              - delay: 120ms
+              - output.turn_off: led_fault
+
+output:
+  - platform: gpio
+    pin: GPIO25
+    id: led_wifi
+  - platform: gpio
+    pin: GPIO26
+    id: led_bus
+  - platform: gpio
+    pin: GPIO27
+    id: led_fault
+
+interval:
+  # 250 ms so a 2 Hz blink is expressible. Polled from one place rather than
+  # driven by triggers on wifi:/modbus:, which live in other packages -- this
+  # keeps every LED rule in one file and makes them self-correcting after any
+  # reconnect a trigger might have missed.
+  - interval: 250ms
+    then:
+      - lambda: |-
+          static uint8_t tick = 0;
+          const uint8_t phase = tick++ % 8;          // 8 x 250 ms = 2 s cycle
+          const bool fast   = phase % 2;             // 2 Hz
+          const bool slow   = (phase / 2) % 2;       // 1 Hz
+          const bool dbl    = (phase == 0 || phase == 2);   // two pips, then rest
+
+          // --- WIFI -------------------------------------------------------
+          // SOLID the moment Wi-Fi associates, with a double-pulse once Home
+          // Assistant is also connected.
+          //
+          // This used to slow-blink on "Wi-Fi up, API not connected", to keep
+          // those two apart -- they are different failures with different
+          // fixes. The distinction was real and the placement was wrong:
+          // someone standing at the generator who has just typed in Wi-Fi
+          // credentials reads a blinking light as "it did not work", and goes
+          // round again on a device that was already fine. The API state is
+          // visible in Home Assistant, where you would act on it anyway.
+          //
+          // So confirmation is immediate, and the fully-working state is the
+          // livelier one rather than an ambiguous one.
+          if (wifi::global_wifi_component->is_connected()) {
+            const bool api_up = api::global_api_server != nullptr &&
+                                api::global_api_server->is_connected();
+            id(led_wifi).set_state(api_up ? (dbl || !fast) : true);
+          } else if (wifi::global_wifi_component->is_ap_active()) {
+            id(led_wifi).set_state(fast);
+          } else {
+            id(led_wifi).set_state(false);
+          }
+
+          // --- BUS --------------------------------------------------------
+          const bool bus_ok = id(bus_healthy).state;
+          if (!bus_ok) {
+            id(led_bus).set_state(false);
+          } else {
+            const float rate = id(bus_success_rate).state;
+            if (!std::isnan(rate) && rate < 90.0f) {
+              id(led_bus).set_state(slow);          // answering, but lossy
+            } else if (id(feat_passthrough).state) {
+              id(led_bus).set_state(dbl);           // healthy AND proxying
+            } else {
+              id(led_bus).set_state(true);
+            }
+          }
+
+          // --- FAULT ------------------------------------------------------
+          // Ordered by what you would have to do about it. Safe mode outranks
+          // a generator fault: if the firmware is not running properly, what
+          // the generator thinks is the lesser problem.
+          if (id(safe_mode_component)->get_safe_mode_pending()) {
+            id(led_fault).set_state(fast);
+          } else if (!bus_ok) {
+            id(led_fault).set_state(false);         // BUS off already says it
+          } else if (id(common_shutdown).state || id(electrical_trip).state) {
+            id(led_fault).set_state(true);
+          } else if (id(general_warning).state || id(maintenance_required).state) {
+            id(led_fault).set_state(slow);
+          } else {
+            id(led_fault).set_state(false);
+          }

@@ -1,0 +1,76 @@
+# Web UI login, changeable at runtime and persisted in NVS.
+#
+# WHY THIS ONE IS SAFE AND THE OTA PASSWORD IS NOT
+#
+# Both have runtime setters. Only this one should use them.
+#
+# The OTA password has an invariant worth protecting: the value on the device
+# and the value your tooling sends are THE SAME VALUE, because both come from
+# secrets.yaml at build time. They cannot drift. Move it to NVS and that
+# guarantee is gone -- change it here, forget to change secrets.yaml, and the
+# next `esphome run` is rejected. Unlike wifi.configure there is no revert on
+# failure, so the recovery is a USB cable and an opened enclosure. A setting
+# that can silently cost you remote updates is not worth the convenience.
+#
+# The web login has no such property. Get it wrong and you lose the web UI --
+# while the API, OTA and Home Assistant all keep working, and you can put it
+# right from any of them, or with Factory Reset.
+#
+# Leave either field blank to keep the compiled-in value from secrets.yaml.
+
+text:
+  - platform: template
+    name: "Web Username"
+    id: cfg_web_user
+    icon: mdi:account-key
+    entity_category: config
+    optimistic: true
+    mode: text
+    min_length: 0
+    max_length: 32
+    restore_value: true
+
+  - platform: template
+    name: "Web Password"
+    id: cfg_web_pass
+    icon: mdi:form-textbox-password
+    entity_category: config
+    optimistic: true
+    mode: password
+    min_length: 0
+    max_length: 48
+    restore_value: true
+
+script:
+  - id: apply_web_login
+    then:
+      - lambda: |-
+          // set_auth_* store the POINTER, not a copy, so the strings they are
+          // given have to outlive the call. Statics here; handing them
+          // .c_str() of a template entity's state would dangle the moment that
+          // entity was written again.
+          static std::string web_u, web_p;
+          if (!id(cfg_web_user).state.empty() && !id(cfg_web_pass).state.empty()) {
+            web_u = id(cfg_web_user).state;
+            web_p = id(cfg_web_pass).state;
+            if (web_server_base::global_web_server_base != nullptr) {
+              web_server_base::global_web_server_base->set_auth_username(web_u.c_str());
+              web_server_base::global_web_server_base->set_auth_password(web_p.c_str());
+              ESP_LOGI("web_cfg", "Web login set to user '%s'", web_u.c_str());
+            }
+          }
+
+button:
+  - platform: template
+    name: "Apply Web Login"
+    icon: mdi:content-save-cog
+    entity_category: config
+    on_press:
+      - script.execute: apply_web_login
+      - logger.log: "Web login updated; existing browser sessions stay signed in until reload"
+
+esphome:
+  on_boot:
+    - priority: -10
+      then:
+        - script.execute: apply_web_login

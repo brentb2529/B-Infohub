@@ -1,0 +1,29 @@
+Comment,Designator,Footprint,LCSC Part #,Qty,Assembly,Note,Description
+100uF 25V,C1,CP_Elec_6.3x7.7,C3338,1,JLC SMT,,12 V bulk: holds the rail through the crank dip (11.4 V measured 2026-08-31)
+100nF 50V,"C2,C4,C8,C9,C10",C_0603_1608Metric,C14663,5,JLC SMT,,bootstrap cap BST-SW
+10uF 50V,C3,C_1206_3216Metric,C13585,1,JLC SMT,,"buck input cap, right at VIN. 50 V not 25 V: ceramics lose a lot of capacitance under DC bias, and this sits on a 14.6 V rail. (b-hydro used C89632; that part is down to single-digit stock at LCSC, so this board takes the basic-part equivalent.)"
+22uF 25V,"C5,C6,C7",C_0805_2012Metric,C45783,3,JLC SMT,,5 V bulk near the ESP 5V pin
+BZT52C10,D1,D_SOD-123,C173431,1,JLC SMT,,10 V zener gate-source: clamps Q1 Vgs within the AO3401A +-12 V limit
+SMBJ16A,D2,D_SMB,C353386,1,JLC SMT,,Input TVS. b-hydro skipped this on purpose (indoor). A generator pad is not indoor: the starter is a large inductive load. 16 V standoff clears the 14.6 V charging rail.
+SM712,"D3,D4",SOT-23,C32677,2,JLC SMT,,"PSM712 RS-485 TVS on the controller pair (asymmetric -7/+12 V, the RS-485 standard part)"
+GREEN,"D5,D7",LED_0603_1608Metric,C965804,2,JLC SMT,,GREEN LED -- Modbus online: the controller is answering. Sits under a light pipe in the lid; see enclosure docs.
+BLUE,D6,LED_0603_1608Metric,C965807,1,JLC SMT,,BLUE LED -- Wi-Fi associated. Sits under a light pipe in the lid; see enclosure docs.
+RED,D8,LED_0603_1608Metric,C2286,1,JLC SMT,,RED LED -- a generator fault is active. Sits under a light pipe in the lid; see enclosure docs.
+YELLOW,D9,LED_0603_1608Metric,C965803,1,JLC SMT,,"YELLOW LED -- transmit: driven from DE, so it needs no GPIO and proves the bridge is actually talking. Sits under a light pipe in the lid; see enclosure docs."
+1.1A polyfuse,F1,Fuse_1812_4532Metric,C883148,1,JLC SMT,,"1.1 A hold / 2.2 A trip on the 5 V rail, below the buck's 3.2 A limit"
+2A polyfuse 1812,F2,Fuse_1812_4532Metric,C2760293,1,JLC SMT,,"SMD1812-200C-30V, 2 A hold / 4 A trip, 30 V: InfoHub supply, independent of F1"
+12V IN,J1,"TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",C474881,1,"JLC THT (economic, hand-solder fee)",,Screw terminal 5.08 2P: +12 V (harness red/grey) and GND (harness black)
+TERM 120R,"JP1,JP2",PinHeader_1x02_P2.54mm_Vertical,C492401,2,"JLC THT (economic, hand-solder fee)",,"120R termination jumper, controller side. LEAVE OPEN by default: 368 consecutive error-free block reads at 9600 8E1 on 2026-08-31 with an unterminated adapter, and at 104 us per bit reflections settle ~1000x faster than the sampling instant. Fit only if CRC errors appear."
+BUS A B,J2,"TerminalBlock_Phoenix_MPT-0,5-2-2.54_1x02_P2.54mm_Horizontal",C474920,1,"JLC THT (economic, hand-solder fee)",,"Screw terminal 2.54 2P to the ABC controller: A and B only. The harness ground arrives on J1 and is the same net, so a separate ground pin here would be redundant. Swap A/B if the bus stays silent."
+IH 12V GND A B,J3,"TerminalBlock_Phoenix_MPT-0,5-4-2.54_1x04_P2.54mm_Horizontal",C474922,1,"JLC THT (economic, hand-solder fee)",,"Screw terminal 2.54 4P to the InfoHub: +12 V (fused by F2), GND, A, B"
+LED OUT,J4,PinHeader_1x06_P2.54mm_Vertical,C492405,1,"JLC THT (economic, hand-solder fee)",,"External LED header: GND, PWR, WIFI, BUS, FAULT, TX"
+10uH 2.5A,L1,L_Bourns_SRN6045TA,C79272,1,JLC SMT,,SWPA6045S100MT shielded 6x6
+AO3401A,Q1,SOT-23,C15127,1,JLC SMT,,"P-MOSFET reverse-polarity protection, 4 A -- carries BOTH our load and the InfoHub passthrough"
+4k7,R1,R_0603_1608Metric,C23162,1,JLC SMT,,Q1 gate pull-down; ~0.4 mA through D1 keeps the clamp in its characterised region
+100k,R2,R_0603_1608Metric,C25803,1,JLC SMT,,buck EN pull-up (always on)
+120R,"R3,R4",R_0603_1608Metric,C22787,2,JLC SMT,,"bus termination, controller side"
+330R,"R5,R8,R9",R_0603_1608Metric,C23138,3,JLC SMT,,"D5 series resistor, ~4 mA."
+100R,"R6,R7",R_0603_1608Metric,C22775,2,JLC SMT,,"D6 series resistor, ~4 mA. Small value: blue/green Vf leaves little headroom on 3.3 V."
+Female header 1x19 2.54mm,"U1A,U1B",PinSocket_1x19_P2.54mm_Vertical,C319202,2,"JLC THT (economic, hand-solder fee)",,ESP32 socket row
+AP63205WU-7,U2,TSOT-23-6,C2071056,1,JLC SMT,,"Sync buck 3.8-32 V in, fixed 5 V 2 A, TSOT-23-6"
+SP3485EN,"U3,U4",SOIC-8_3.9x4.9mm_P1.27mm,C8963,2,JLC SMT,,"3.3 V half-duplex RS-485, controller side. RE and DE tied: one GPIO drives direction."

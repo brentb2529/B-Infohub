@@ -1,0 +1,46 @@
+# MQTT output, in addition to the native Home Assistant API.
+#
+# ESPHome runs `api:` and `mqtt:` side by side quite happily, and that is the
+# arrangement here: Home Assistant keeps using the native API (faster, encrypted,
+# no broker in the failure path), while MQTT carries the same values to anything
+# else on the network.
+#
+# DISCOVERY IS OFF, AND MUST STAY OFF while `api:` is also enabled. If you turn it
+# on, Home Assistant will create a SECOND set of entities via MQTT discovery
+# alongside the native-API ones. They look identical in the UI, and you will spend
+# an afternoon wondering why half your dashboard cards are `unavailable` -- they
+# are bound to the duplicate set. Only enable discovery if you delete `api:` from
+# packages/base.yaml and commit to MQTT as the sole transport.
+#
+# Topics published under: ${mqtt_prefix}/sensor/<object_id>/state  (etc.)
+
+mqtt:
+  id: mqtt_client
+  broker: !secret mqtt_broker
+  port: 1883
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  topic_prefix: ${mqtt_prefix}
+  discovery: false
+  discovery_retain: false
+
+  # The 'Feature: MQTT' switch owns the connection. It restores ON by default,
+  # so behaviour is unchanged unless you turn it off -- but turning it off now
+  # actually stops the client instead of needing a rebuild.
+  enable_on_boot: false
+
+  # Retained so a consumer that connects late still learns the bridge is alive,
+  # rather than sitting on a stale "online" from before the last power cut.
+  birth_message:
+    topic: ${mqtt_prefix}/status
+    payload: online
+    retain: true
+  will_message:
+    topic: ${mqtt_prefix}/status
+    payload: offline
+    retain: true
+
+  # The generator matters most when the grid is down. If the broker is on a box
+  # without a UPS, a broker outage must not take the bridge with it -- keep
+  # publishing to the native API and reconnect to MQTT when it returns.
+  reboot_timeout: 0s

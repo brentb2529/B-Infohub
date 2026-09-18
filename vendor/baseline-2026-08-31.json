@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "Alarm/status registers captured from the real controller at rest, 2026-08-31,",
+    "via tools/gc1032_probe.py dump (slave 10, 9600 8E1).",
+    "",
+    "Generator state at capture time, independently corroborated:",
+    "  status word 0x004F = 0x6880  -> Off-Ready, Automatic, engine Stopped,",
+    "                                  utility healthy, no common shutdown",
+    "  engine speed 0 RPM, battery 13.1 V, utility 235.0 V L-L at 59.90 Hz",
+    "",
+    "WHY THIS FILE EXISTS: on this hardware an alarm nibble of 0 means BOTH",
+    "'fault asserted' and 'input not populated'. Decoding naively lights up 15",
+    "faults on a demonstrably healthy generator. Any condition asserted in THIS",
+    "capture is treated as an absent sensor rather than a fault, and generated",
+    "into packages/gc1032-alarms.yaml as disabled_by_default (not deleted).",
+    "",
+    "Corroborating evidence that these are absent sensors, not real faults:",
+    "  oil pressure 0x0033, fuel level 0x0035, fuel volume 0x0036 all read 0xFFFF",
+    "  every L3 register reads 0xFFFF (single-phase 240 V unit)",
+    "",
+    "IF YOU EVER SERVICE THE UNIT OR ADD A SENSOR, RE-CAPTURE THIS FILE and",
+    "re-run tools/gen_alarms.py, or a newly-wired input will stay hidden."
+  ],
+  "captured": "2026-08-31",
+  "slave": 10,
+  "baud": 9600,
+  "parity": "E",
+  "registers": {
+    "0040": "0x1100", "0041": "0x1111", "0042": "0xFF11", "0043": "0x1111",
+    "0044": "0xF0F0", "0045": "0x111F", "0046": "0x0100", "0047": "0x0011",
+    "0048": "0x1001", "0049": "0x1111", "004a": "0x0000", "004b": "0x0F01",
+    "004c": "0x1F11", "004d": "0x11FE", "004e": "0x0007", "004f": "0x6880"
+  }
+}

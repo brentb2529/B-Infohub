@@ -1,0 +1,78 @@
+REG     RAW         VALUE           NAME
+------------------------------------------------------------------------
+0x0000  0x8003      32771           Protocol Revision
+0x0001  0x0         0.00            Generator L1 Voltage
+0x0002  0x0         0.00            Generator L2 Voltage
+0x0003  0xFFFF      6553.50         Generator L3 Voltage
+0x0004  0x0         0.00            Generator L1-L2 Voltage
+0x0005  0xFFFF      6553.50         Generator L2-L3 Voltage
+0x0006  0xFFFF      6553.50         Generator L3-L1 Voltage
+0x0007  0x0         0.00            Generator L1 Frequency
+0x0008  0x0         0.00            Generator L2 Frequency
+0x0009  0xFFFF      6553.50         Generator L3 Frequency
+0x000A  0x0         0.00            L1 Power Factor
+0x000B  0x0         0.00            L2 Power Factor
+0x000C  0xFFFF      655.35          L3 Power Factor
+0x000D  0x0         0.00            Average Power Factor
+0x000E  0x49C       118.00          Utility L1 Voltage
+0x000F  0x49C       118.00          Utility L2 Voltage
+0x0010  0xFFFF      6553.50         Utility L3 Voltage
+0x0011  0x942       237.00          Utility L1-L2 Voltage
+0x0012  0xFFFF      6553.50         Utility L2-L3 Voltage
+0x0013  0xFFFF      6553.50         Utility L3-L1 Voltage
+0x0014  0x257       59.90           Utility L1 Frequency
+0x0015  0x258       60.00           Utility L2 Frequency
+0x0016  0xFFFF      6553.50         Utility L3 Frequency
+0x0017  0x0         0.00            Generator L1 Current
+0x0018  0x1         0.10            Generator L2 Current
+0x0019  0xFFFF      6553.50         Generator L3 Current
+0x001A  0x0         0.00            L1 Power kW
+0x001B  0x0         0.00            L2 Power kW
+0x001C  0x0         0.00            L3 Power kW
+0x001D  0x0         0.00            Total Power kW
+0x001E  0x0         0               Percentage Load
+0x001F  0x0         0.00            L1 Load kVA
+0x0020  0x0         0.00            L2 Load kVA
+0x0021  0x0         0.00            L3 Load kVA
+0x0022  0x0         0.00            Total Load kVA
+0x0023  0x0         0.00            L1 Load kVR Reactive
+0x0024  0x0         0.00            L2 Load kVR Reactive
+0x0025  0xFFFF      6553.50         L3 Load kVR Reactive
+0x0026  0x0         0.00            Total Load kVR Reactive
+0x0027  0x51E       131.00          Cumulative Energy kWh
+0x0029  0x56E       139.00          Cumulative Apparent Energy kVAh
+0x002B  0x46        7.00            Cumulative Reactive Energy kVARh
+0x0033  0xFFFF      6553.50         Oil Pressure Bar
+0x0034  0x168       36.00           Coolant Temp, C
+0x0035  0xFFFF      6553.50         Fuel Level Percent
+0x0036  0xFFFF      6553.50         Fuel Volume, L
+0x0038  0x85        13.30           Battery Voltage
+0x0039  0x0         0               Engine Speed
+0x003A  0x118       280             Number of Starts
+0x003B  0x2         2               Number of Trips
+0x003C  0x5C        92              Engine Run Time - Hours
+0x003D  0x23        35              Engine Run Time - Minutes
+0x0040  0x1100      4352            Alarm Register 1
+0x0041  0x1111      4369            Alarm Register 2
+0x0042  0xFF11      65297           Alarm Register 3
+0x0043  0x1111      4369            Alarm Register 4
+0x0044  0xF0F0      61680           Alarm Register 5
+0x0045  0x111F      4383            Alarm Register 6
+0x0046  0x100       256             Alarm Register 7
+0x0047  0x11        17              Alarm Register 8
+0x0048  0x1001      4097            Alarm Register 9
+0x0049  0x1111      4369            Alarm Register 10
+0x004A  0x0         0               Alarm Register 11
+0x004B  0xF01       3841            Alarm Register 12
+0x004C  0x1F11      7953            Alarm Register 13
+0x004D  0x11FE      4606            Alarm Register 14
+0x004E  0x1         1               Alarm Register 15
+0x004F  0x6080      24704           Status Register
+0x0050  0x1F00      7936            Time - Minutes
+0x0051  0xFF10      65296           Time - Hours
+0x0052  0x81F       2079            Date - Month / Day
+0x0053  0x7EA       2026            Date - Year
+0x0054  0x18FF      6399            Nominal kW
+0x0055  0x4113      16659           Controller Firmware
+0x0056  0x9EEC      40684           Unknown Value
+0x00B5  skipped                     Controller Model  (known timeout risk)

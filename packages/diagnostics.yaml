@@ -1,0 +1,126 @@
+# RS-485 bus health.
+#
+# "Is the bridge online" is not the same question as "is the bus alive", and
+# conflating them is the failure this file exists to prevent. A bridge whose
+# RS-485 has died -- unplugged, controller powered off, wrong baud after an
+# edit -- stays on Wi-Fi, keeps serving its web UI, and keeps its last good
+# readings. Those readings look exactly like a healthy idle generator: 0 kW,
+# engine not running, no alarms. Nothing about them says "stale".
+#
+# So health is measured the only way that cannot lie: TIME SINCE A REGISTER
+# LAST ARRIVED. battery_voltage is the witness -- it is present on every unit,
+# it is never 0xFFFF "not present", and it updates every poll whether the
+# engine runs or not.
+
+globals:
+  - id: last_good_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: poll_ok
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: poll_miss
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+sensor:
+  # The witness. A `copy` sensor rather than an on_value bolted onto the real
+  # battery_voltage entity, so the generated data packages stay untouched and
+  # regenerating them cannot silently remove the health hook.
+  - platform: copy
+    source_id: battery_voltage
+    id: bus_witness
+    internal: true
+    on_value:
+      - lambda: 'id(last_good_ms) = millis();'
+
+  - platform: template
+    name: "Bus Age"
+    id: bus_age_seconds
+    unit_of_measurement: s
+    accuracy_decimals: 0
+    icon: mdi:timer-sand
+    entity_category: diagnostic
+    update_interval: 5s
+    lambda: |-
+      if (id(last_good_ms) == 0) return NAN;   // nothing has ever arrived
+      return (millis() - id(last_good_ms)) / 1000.0f;
+
+  - platform: template
+    name: "Bus Success Rate"
+    id: bus_success_rate
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    icon: mdi:check-network
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: |-
+      uint32_t t = id(poll_ok) + id(poll_miss);
+      if (t == 0) return NAN;
+      return 100.0f * id(poll_ok) / t;
+
+  - platform: template
+    name: "Bus Reads OK"
+    id: bus_reads_ok
+    accuracy_decimals: 0
+    icon: mdi:counter
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: 'return id(poll_ok);'
+
+  - platform: template
+    name: "Bus Reads Missed"
+    id: bus_reads_missed
+    accuracy_decimals: 0
+    icon: mdi:counter
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: 'return id(poll_miss);'
+
+binary_sensor:
+  - platform: template
+    name: "Bus Healthy"
+    id: bus_healthy
+    device_class: connectivity
+    entity_category: diagnostic
+    lambda: |-
+      if (id(last_good_ms) == 0) return false;
+      // Three missed polls is unambiguous. One can be a collision or a busy
+      // controller; two is bad luck; three is a fault.
+      return (millis() - id(last_good_ms)) < (3 * ${update_interval_ms});
+
+text_sensor:
+  - platform: template
+    name: "Bus Status"
+    id: bus_status_text
+    icon: mdi:transmission-tower
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      if (id(last_good_ms) == 0) return {"never seen"};
+      uint32_t age = (millis() - id(last_good_ms)) / 1000;
+      if (age < 3 * ${update_interval_s}) return {"ok"};
+      if (age < 300) return {"stale (" + to_string(age) + "s)"};
+      return {"DEAD (" + to_string(age / 60) + "m)"};
+
+interval:
+  # Count a poll as missed if nothing arrived in a whole interval. Paired with
+  # the on_value hook below, this gives an honest success rate rather than one
+  # derived from ESPHome's internal retries.
+  - interval: ${update_interval}
+    then:
+      - lambda: |-
+          static uint32_t seen = 0;
+          if (id(last_good_ms) != seen) { seen = id(last_good_ms); id(poll_ok)++; }
+          else { id(poll_miss)++; }
+
+button:
+  - platform: template
+    name: "Reset Bus Counters"
+    icon: mdi:restore
+    entity_category: diagnostic
+    on_press:
+      - lambda: 'id(poll_ok) = 0; id(poll_miss) = 0;'

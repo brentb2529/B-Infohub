@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "binfohub")(type "KiCad")(uri "${KIPRJMOD}/binfohub.kicad_sym")(options "")(descr "b-hydro project symbols"))
+)

@@ -1,0 +1,176 @@
+# Briggs & Stratton GC-1030/1031/1032 RS-485 bridge
+# ESP32-DevKitC 38-pin (ESP32-WROOM-32D) + MAX485 module with DE/RE pins.
+#
+# Replaces the B&S InfoHub with a local, subscription-free Modbus RTU master.
+# See README.md for wiring, the 12 V power front end, and bring-up order.
+#
+#   THE INFOHUB MUST BE DISCONNECTED FROM THE RS-485 PAIR BEFORE POWERING THIS UP.
+#   Modbus RTU permits exactly one master. Two masters means collisions, corrupt
+#   frames in both directions, and an InfoHub reporting comm faults to your dealer.
+#
+# Build:  esphome compile genset-gc1032.yaml
+# Flash:  esphome run genset-gc1032.yaml      (USB the first time, OTA after)
+
+substitutions:
+  name: b-infohub
+  friendly_name: "Genset"        # NOT "Generator" -- that collides with the existing
+                                 # energytrak entities in HA and you get _2 suffixes
+                                 # on every entity_id. Entity ids below are genset_*.
+
+  # --- RS-485 wiring (see docs/wiring.md) ---
+  uart_tx_pin: GPIO17           # -> MAX485 DI
+  uart_rx_pin: GPIO16           # <- MAX485 RO
+  flow_control_pin: GPIO4       # -> MAX485 DE and RE, bridged together
+
+  # --- Port B: the InfoHub side (PCB rev 1.0, transceiver U4) ---
+  # We are the SLAVE here. The InfoHub polls us; we answer from what port A
+  # read. Two transceivers is what makes this legal -- one Modbus pair may
+  # have only one master, and on the generator's pair that master is us.
+  uart_b_tx_pin: GPIO22         # -> U4 DI
+  uart_b_rx_pin: GPIO23         # <- U4 RO
+  flow_control_b_pin: GPIO21    # -> U4 DE and RE, bridged together
+
+  # --- Bus parameters ---
+  # VERIFY THESE FIRST. Run `python3 tools/gc1032_probe.py scan --port ...` with the
+  # FTDI cable, or read them off the controller: Module -> Communication.
+  # Several of those parameters are dealer-locked, so you may be able to view but not
+  # change them -- that is fine, match your side to whatever it reports.
+  # DISCOVERED ON THE REAL BUS 2026-08-31 by tools/gc1032_probe.py scan.
+  # Not the genmon defaults -- this unit answers at slave id 10, 9600 8E1.
+  # Verified by reading real mains (118.0/116.0 V, 235.0 V L-L, 59.90 Hz),
+  # battery 13.1 V, 279 starts, 92h28m run time, and status word 0x6880.
+  modbus_address: "10"
+  modbus_baud: "9600"
+  modbus_parity: EVEN           # NONE | EVEN | ODD
+
+  # 10s is a deliberate compromise: fast enough to catch a transfer event, slow
+  # enough that ~90 registers per cycle do not saturate a 19200 baud bus.
+  update_interval: 10s
+  update_interval_s: "10"      # same value, for lambdas
+  update_interval_ms: "10000"  # same value, for lambdas
+
+  # How long a KNOWN network must be gone before the bridge offers its own
+  # setup Wi-Fi again. See the long note in packages/base.yaml.
+  ap_fallback_after: 1h
+
+  mqtt_prefix: b-infohub
+
+esp32:
+  board: esp32dev
+  # Custom table: bigger OTA slots at the expense of an oversized NVS.
+  # See the header in partitions.csv -- and note that changing it needs one
+  # USB flash, because a partition table cannot move itself over the air.
+  partitions: partitions.csv
+  framework:
+    type: esp-idf
+    advanced:
+      # Bootloader-level A/B rollback. This defaults to true, but ESPHome
+      # SILENTLY turns it off unless safe_mode is also configured -- which it
+      # was not, so every build before packages/resilience.yaml shipped without
+      # the rollback it appeared to have. Stated explicitly so the intent is
+      # visible and a future edit that drops safe_mode is a louder mistake.
+      enable_ota_rollback: true
+      # The bootloader told us on first boot:
+      #   "Bootloader supports SRAM1 as IRAM (+40KB)"
+      # We are at ~78% RAM, so 40 KB is worth having and costs nothing -- the
+      # bootloader that supports it is the one we ship.
+      sram1_as_iram: true
+      # NOT taking the other hint it gave ("Set minimum_chip_revision 3.1").
+      # That trims flash, which we do not need -- 470 KB spare -- and in
+      # exchange the image refuses to boot on any earlier ESP32. Locking the
+      # firmware to the revision that happened to be on the bench is a trap
+      # for whoever assembles the next batch.
+
+# The flash event log lives here rather than in packages/, because it is a
+# real C++ component rather than YAML.
+external_components:
+  - source:
+      type: local
+      path: components
+
+packages:
+  base:    !include packages/base.yaml
+  # Safe mode + OTA rollback. Must be present for enable_ota_rollback above to
+  # take effect -- see the header in that file.
+  resilience:  !include packages/resilience.yaml
+  # RS-485 bus health. local-telemetry.yaml depends on the entities it defines.
+  diagnostics: !include packages/diagnostics.yaml
+  features:    !include packages/features.yaml
+  # Change the Wi-Fi network from the UI. Safe because wifi.configure reverts
+  # to the previous credentials if the new ones do not connect.
+  wificfg:     !include packages/wifi-config.yaml
+  # Runtime MQTT broker settings, persisted in NVS. See that file for why HA
+  # needs no equivalent (it connects TO us, not the other way round).
+  mqttcfg:     !include packages/mqtt-config.yaml
+  # Web UI login, runtime-settable. NOT the OTA password -- see that file.
+  webcfg:      !include packages/web-config.yaml
+  # External reset input on IO33. Not fitted on rev 1.0 -- the internal pull-up
+  # makes it inert until the hardware exists. See the header in that file for
+  # why it is NOT on IO0.
+  reset_btn:   !include packages/reset-button.yaml
+  # Exercise observation + history. NOT schedule setting -- the controller
+  # exposes no such register; see the header in that file.
+  exercise:    !include packages/exercise.yaml
+  # GENERATED by contract/gen.py. Writes alarm transitions to flash so an
+  # outage cannot erase them. Requires the 'backlog' partition -- reflash over
+  # USB if this board predates it.
+  alarmlog:    !include packages/alarm-log.yaml
+  # Cursor-and-ack drain so Home Assistant can pull the event log out.
+  drain:       !include packages/backlog-drain.yaml
+  # GENERATED. Buffers a 12-value snapshot to flash while HA is unreachable.
+  snapshot:    !include packages/snapshot-log.yaml
+  # GENERATED by contract/gen.py. Serves the register map back out of port B so
+  # an InfoHub can hang off this bridge instead of fighting it for the bus.
+  # Gated at runtime by the "Feature: InfoHub Passthrough" switch.
+  passthrough: !include packages/passthrough.yaml
+  mqtt:    !include packages/mqtt.yaml
+  # GENERATED by contract/gen.py. The flat telemetry snapshot ha-energytrak
+  # consumes as its local source. Re-run the generator after changing sensors.
+  telemetry:   !include packages/local-telemetry.yaml
+  power:   !include packages/gc1032-power.yaml
+  engine:  !include packages/gc1032-engine.yaml
+  status:  !include packages/gc1032-status.yaml
+  alarms:  !include packages/gc1032-alarms.yaml
+  # Every remaining address the controller answers, raw and disabled by default.
+  unmapped: !include packages/gc1032-unmapped.yaml
+  # On-board status LEDs (PCB rev 1.0). Harmless on a breadboard build:
+  # the GPIOs simply drive nothing.
+  leds:     !include packages/status-leds.yaml
+
+  # Engine start/stop. NOT WANTED and NOT BUILT -- left here because the file
+  # records field-proven command values (0x0001 manual/stop, 0x0002 crank,
+  # 0x0004 auto; start is a two-write sequence) that were expensive to learn and
+  # would be worse to rediscover. The bridge is read-only on the genset bus.
+  # control: !include packages/gc1032-control.yaml
+
+# List form, not a mapping: packages/passthrough.yaml appends port B, and
+# ESPHome merges package lists by extending them.
+uart:
+  - id: rs485_uart
+    tx_pin: ${uart_tx_pin}
+    rx_pin: ${uart_rx_pin}
+    baud_rate: ${modbus_baud}
+    parity: ${modbus_parity}
+    stop_bits: 1
+    data_bits: 8
+
+modbus:
+  - id: rs485_bus
+    uart_id: rs485_uart
+    role: client
+    flow_control_pin: ${flow_control_pin}
+  # Gap between transactions. The GC-1032 is not fast; crowding it produces timeouts
+  # that read like wiring faults. ESPHome's default is 600ms, which is safe but makes
+  # a full poll take several seconds. Raise this back toward 600ms if you see CRC
+  # errors or "No response from device" in the log.
+    turnaround_time: 200ms
+  # The MAX485 needs DE/RE driven manually. Auto-direction modules (no DE/RE pins)
+  # are unreliable at Modbus timing -- if that is what you have, get a different one
+  # rather than fighting it. Same lesson as the WaterFurnace build.
+
+modbus_controller:
+  - id: gc1032
+    address: ${modbus_address}
+    modbus_id: rs485_bus
+    update_interval: ${update_interval}
+    setup_priority: -10

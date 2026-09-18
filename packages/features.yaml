@@ -1,0 +1,59 @@
+# Runtime feature toggles.
+#
+# WHAT CAN AND CANNOT BE TOGGLED AT RUNTIME, AND WHY
+#
+# ESPHome's config is compile-time. Most "enable X?" questions therefore have
+# to be answered by rebuilding -- but not all, and it is worth being precise
+# rather than pretending either way:
+#
+#   MQTT          -- TRUE runtime toggle. The component exposes enable()/
+#                    disable() actions and an `enable_on_boot` flag, so the
+#                    switch below genuinely starts and stops the client.
+#
+#   Home Assistant-- NOT toggleable, and does not need to be. The native API
+#                    listens; if HA is not configured to connect, it costs one
+#                    idle socket. There is nothing to switch off.
+#
+#   Passthrough   -- gated here, implemented in packages/passthrough.yaml.
+#
+#   Control       -- the start/stop package is COMPILE-time (commented out in
+#                    genset-gc1032.yaml). That is deliberate. A runtime switch
+#                    that can be flipped from a phone is the wrong safety model
+#                    for something that cranks an engine; you should have to
+#                    rebuild and reflash to gain that power.
+#
+# Every switch restores across reboots, so the bridge comes back the way you
+# left it after a power cut -- which, on a generator, is a thing that happens.
+
+switch:
+  - platform: template
+    name: "Feature: MQTT"
+    id: feat_mqtt
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    optimistic: true
+    # OFF by default, deliberately. Home Assistant now reaches this bridge over
+    # the native API, so MQTT is an EXTRA -- for Grafana, or anything else on
+    # the network. Defaulting it on meant a first boot with an unconfigured
+    # broker spent forever failing to connect and filling the log, which is a
+    # miserable thing to hand someone during bring-up. Set mqtt_broker in
+    # secrets.yaml, then turn this on; it is remembered across reboots.
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - mqtt.enable:
+      - logger.log: "MQTT enabled"
+    turn_off_action:
+      - mqtt.disable:
+      - logger.log: "MQTT disabled -- local telemetry snapshot stops publishing"
+
+  - platform: template
+    name: "Feature: InfoHub Passthrough"
+    id: feat_passthrough
+    icon: mdi:swap-horizontal
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - logger.log: "InfoHub passthrough enabled -- serving cached registers on port B"
+    turn_off_action:
+      - logger.log: "InfoHub passthrough disabled -- port B silent"

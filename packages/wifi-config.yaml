@@ -1,0 +1,98 @@
+# Change the Wi-Fi network from the web UI or Home Assistant.
+#
+# Wi-Fi is the ONE credential that is genuinely runtime-changeable on this
+# device -- broker addresses, API keys and the web login are all compiled in
+# and need a rebuild plus an OTA. Wi-Fi is different because ESPHome stores it
+# in NVS rather than in the image, and exposes `wifi.configure` to rewrite it.
+#
+# WHY THIS IS SAFE TO EXPOSE
+#
+# The obvious fear is a typo stranding the bridge on a wall. It cannot:
+# WiFiConfigureAction saves the OLD credentials before trying the new ones, and
+# on timeout it puts them back --
+#
+#     global_wifi_component->save_wifi_sta(old_sta_.get_ssid(), ...)
+#
+# So a wrong password costs 30 seconds and returns you to the network you were
+# already on. Without that revert this control would be a footgun and would
+# have stayed out.
+#
+# The alternative -- Factory Reset -- also works, but it is a sledgehammer: it
+# wipes the feature switches, exercise history and bus counters as well, and
+# then requires standing at the device to re-onboard. This changes one thing.
+
+text:
+  - platform: template
+    name: "Wi-Fi SSID"
+    id: cfg_wifi_ssid
+    icon: mdi:wifi-cog
+    entity_category: config
+    optimistic: true
+    mode: text
+    min_length: 0
+    max_length: 32
+    # Restored so the field still shows what you last typed after a reboot.
+    restore_value: true
+
+  - platform: template
+    name: "Wi-Fi Password"
+    id: cfg_wifi_pass
+    icon: mdi:form-textbox-password
+    entity_category: config
+    optimistic: true
+    mode: password
+    min_length: 0
+    max_length: 63
+    # Deliberately NOT restored. Wi-Fi credentials already live in NVS, owned
+    # by the wifi component; keeping a second copy in an entity would be a
+    # pointless extra place for the password to leak from.
+    restore_value: false
+
+button:
+  - platform: template
+    name: "Apply Wi-Fi"
+    id: cfg_wifi_apply
+    icon: mdi:wifi-sync
+    entity_category: config
+    on_press:
+      - if:
+          condition:
+            lambda: 'return id(cfg_wifi_ssid).state.length() >= 1;'
+          then:
+            - logger.log:
+                format: "Applying new Wi-Fi credentials for SSID '%s' (30s to connect, then revert)"
+                args: [ 'id(cfg_wifi_ssid).state.c_str()' ]
+            - wifi.configure:
+                ssid: !lambda 'return id(cfg_wifi_ssid).state;'
+                password: !lambda 'return id(cfg_wifi_pass).state;'
+                save: true
+                timeout: 30s
+                on_connect:
+                  - logger.log: "New Wi-Fi credentials accepted and saved"
+                  # Clear the password field -- it is in NVS now and does not
+                  # need to sit in an entity anyone can read.
+                  - text.set:
+                      id: cfg_wifi_pass
+                      value: ""
+                  - repeat:
+                      count: 3
+                      then:
+                        - output.turn_on: led_wifi
+                        - delay: 100ms
+                        - output.turn_off: led_wifi
+                        - delay: 100ms
+                on_error:
+                  - logger.log:
+                      level: ERROR
+                      format: "Could not join that network; previous credentials restored"
+                  - repeat:
+                      count: 6
+                      then:
+                        - output.turn_on: led_fault
+                        - delay: 80ms
+                        - output.turn_off: led_fault
+                        - delay: 80ms
+          else:
+            - logger.log:
+                level: WARN
+                format: "Apply Wi-Fi pressed with an empty SSID; ignored"

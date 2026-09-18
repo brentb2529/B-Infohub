@@ -1,0 +1,84 @@
+# Getting the event log out to Home Assistant.
+#
+# THE PROBLEM THIS SOLVES
+#
+# The ESPHome API has no "give me your history" call -- it carries current
+# state. So the backlog is drained with a cursor built out of the two
+# primitives the API does have: an entity the device publishes, and an action
+# Home Assistant can call.
+#
+#   1. device publishes a batch of unacknowledged events as a text state
+#   2. Home Assistant imports them
+#   3. Home Assistant calls backlog_ack with the last seq it stored
+#   4. device advances its cursor and publishes the next batch, or ""
+#
+# Acknowledgement is what makes this safe across a dropped connection: nothing
+# advances until Home Assistant confirms it has the data, so a disconnect
+# mid-drain replays rather than loses. The cursor is deliberately NOT persisted
+# across reboots -- after a restart the safe assumption is that Home Assistant
+# may have missed something, and replaying an event it already has is free
+# (statistics import is idempotent on the same timestamp) while dropping one
+# is not.
+#
+# An empty batch publishes "-" rather than "". An empty text state looks
+# identical to "no change" to a consumer watching for updates, so the first
+# version of this replayed the same record twenty times in a row before the
+# protocol test caught it.
+#
+# Batches are small on purpose. A text state crossing the API is not the place
+# to discover a length limit, and 8 events is already 40 seconds of the worst
+# alarm storm this controller can produce.
+
+text_sensor:
+  - platform: template
+    name: "Backlog Batch"
+    id: backlog_batch
+    icon: mdi:tray-full
+    entity_category: diagnostic
+    update_interval: never
+    lambda: 'return id(event_log)->batch(8);'
+
+api:
+  actions:
+    # Called by Home Assistant once it has durably stored everything up to seq.
+    - action: backlog_ack
+      variables:
+        seq: int
+      then:
+        - lambda: |-
+            id(event_log)->ack((uint32_t) seq);
+            ESP_LOGI("backlog", "acked to seq %u, %u still pending",
+                     (unsigned) seq, (unsigned) id(event_log)->pending());
+        - component.update: backlog_batch
+        - component.update: backlog_pending
+        - component.update: backlog_cursor
+
+    # Wipe the event ring. Used once after the alarm-decode fixes, to drop the
+    # phantom faults the old firmware recorded rather than import them into
+    # Home Assistant as history.
+    - action: backlog_erase
+      then:
+        - lambda: 'id(event_log)->erase_events();'
+        - component.update: backlog_batch
+        - component.update: backlog_pending
+        - component.update: backlog_cursor
+
+    # Escape hatch: replay everything still on flash, regardless of the cursor.
+    # For when Home Assistant's database was restored from a backup and is
+    # missing events the bridge has already been acked for.
+    - action: backlog_replay_all
+      then:
+        - lambda: 'id(event_log)->reset_cursor();'
+        - logger.log: "Backlog cursor reset; replaying every record on flash"
+        - component.update: backlog_batch
+
+interval:
+  # Publish whenever there is something to send. Cheap: batch() only reads
+  # flash when the cursor is behind.
+  - interval: 10s
+    then:
+      - if:
+          condition:
+            lambda: 'return id(event_log)->ready() && id(event_log)->pending() > 0;'
+          then:
+            - component.update: backlog_batch

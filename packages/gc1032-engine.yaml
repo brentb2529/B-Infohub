@@ -1,0 +1,289 @@
+# GC-1032 engine, fuel, battery and runtime — input registers 0x0033-0x003D (FC04),
+# plus controller clock and nameplate at 0x0050-0x0056.
+#
+# `force_new_range: true` on 0x0033 and 0x0050 stops ESPHome from merging these into
+# one giant read that would span the dead register holes at 0x002D-0x0032 and
+# 0x003E-0x003F. Do not remove those without reading docs/register-map.md.
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Oil Pressure"
+    address: 0x0033
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: bar
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 1
+    force_new_range: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+    id: oil_pressure_bar
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Coolant Temperature"
+    id: coolant_temperature
+    address: 0x0034
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+    # DISABLED, NOT REMOVED -- it is still polled, so enable it in Home Assistant any
+    # time you want to watch it.
+    #
+    # Measured 2026-08-31: read exactly 32.0 C at rest, through crank, through five
+    # minutes of running, and after shutdown. A real sensor moves. On an air-cooled
+    # unit there is no coolant loop, so this is a fixed constant or an unused stub.
+    # Treat it as meaningless until something proves otherwise -- publishing it as a
+    # temperature invites an automation to trust a number that never changes.
+    # See captures/run-2026-08-31.csv, column 0x0034.
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Fuel Level"
+    id: fuel_level
+    address: 0x0035
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+    # Natural-gas and LP units have no tank sender. Expect 0 unless you are on diesel.
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Fuel Volume"
+    id: fuel_volume
+    address: 0x0036
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: L
+    state_class: measurement
+    accuracy_decimals: 1
+    disabled_by_default: true
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Battery Voltage"
+    id: battery_voltage
+    address: 0x0038
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+      - multiply: 0.1
+    # The single most useful number here. A standby generator that fails to start
+    # almost always failed on the battery. Alert below ~12.2 V at rest.
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Engine Speed"
+    id: engine_speed
+    address: 0x0039
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: RPM
+    state_class: measurement
+    accuracy_decimals: 0
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Number of Starts"
+    id: number_of_starts
+    address: 0x003A
+    register_type: read
+    value_type: U_WORD
+    state_class: total_increasing
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Number of Trips"
+    id: number_of_trips
+    address: 0x003B
+    register_type: read
+    value_type: U_WORD
+    state_class: total_increasing
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Engine Run Time Hours"
+    address: 0x003C
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: h
+    device_class: duration
+    state_class: total_increasing
+    accuracy_decimals: 0
+    id: run_time_hours
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Engine Run Time Minutes"
+    address: 0x003D
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: min
+    device_class: duration
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    id: run_time_minutes
+
+  # >>> 0x003E-0x003F IS A HOLE. Alarms resume at 0x0040 in gc1032-alarms.yaml.
+
+  # --- Controller clock and nameplate (0x0050-0x0056) ----------------------
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Nominal kW"
+    id: nominal_kw
+    address: 0x0054
+    register_type: read
+    value_type: U_WORD
+    unit_of_measurement: kW
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    force_new_range: true
+    filters: [multiply: 0.00390625]   # high byte only: value >> 8
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Controller Firmware"
+    id: controller_firmware
+    address: 0x0055
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Unknown Register 0x0056"
+    id: unknown_register_0x0056
+    address: 0x0056
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    disabled_by_default: true
+    # genmon labels this "Unknown Value". Exposed so you can watch it across a run
+    # cycle and see if it correlates with anything. Enable it if you go hunting.
+
+  # Raw clock registers, used by the Controller Time text sensor below.
+    filters:
+      - lambda: 'return x >= 65535.0f ? NAN : x;'   # 0xFFFF = sensor not present
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Controller Clock Minutes Raw"
+    address: 0x0050
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: clock_minutes_raw
+    force_new_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Controller Clock Hours Raw"
+    address: 0x0051
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: clock_hours_raw
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Controller Date MonthDay Raw"
+    address: 0x0052
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: date_monthday_raw
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    name: "Controller Year Raw"
+    address: 0x0053
+    register_type: read
+    value_type: U_WORD
+    internal: true
+    id: date_year_raw
+
+  # --- Derived -------------------------------------------------------------
+  - platform: template
+    name: "Oil Pressure PSI"
+    id: oil_pressure_psi
+    unit_of_measurement: psi
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 1
+    lambda: |-
+      if (isnan(id(oil_pressure_bar).state)) return {};
+      return id(oil_pressure_bar).state * 14.5037738f;
+
+  - platform: template
+    name: "Engine Run Time"
+    id: engine_run_time
+    unit_of_measurement: h
+    device_class: duration
+    state_class: total_increasing
+    accuracy_decimals: 2
+    lambda: |-
+      if (isnan(id(run_time_hours).state) || isnan(id(run_time_minutes).state)) return {};
+      return id(run_time_hours).state + (id(run_time_minutes).state / 60.0f);
+
+text_sensor:
+  - platform: template
+    name: "Controller Time"
+    id: controller_time
+    entity_category: diagnostic
+    lambda: |-
+      if (isnan(id(clock_hours_raw).state) || isnan(id(date_year_raw).state)) return {};
+      uint16_t md = (uint16_t) id(date_monthday_raw).state;
+      char buf[32];
+      snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u",
+               (unsigned) id(date_year_raw).state,
+               (unsigned) (md >> 8), (unsigned) (md & 0xFF),
+               (unsigned) (((uint16_t) id(clock_hours_raw).state) & 0x00FF),
+               (unsigned) ((((uint16_t) id(clock_minutes_raw).state) & 0xFF00) >> 8));
+      return std::string(buf);
+    update_interval: 60s
+    # Byte packing of the date/time registers is inferred from genmon's masks
+    # (hours = low byte of 0x0051, minutes = high byte of 0x0050, month/day packed in
+    # 0x0052). Sanity-check it against the controller's own display and adjust if the
+    # bytes are swapped on your firmware revision.

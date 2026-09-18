@@ -1,0 +1,107 @@
+# GC-1032 CONTROL — writes to holding register 0x0000.
+#
+#   ############################################################################
+#   #  THIS PACKAGE STARTS AND STOPS AN ENGINE.                                #
+#   #  It is NOT included by genset-gc1032.yaml by default. You must           #
+#   #  deliberately uncomment the include, AND flip the "Generator Control     #
+#   #  Enabled" switch, before any button here can write to the bus.           #
+#   ############################################################################
+#
+# Two interlocks, on purpose. The include is the "I meant to build this" gate; the
+# runtime switch is the "a Home Assistant automation cannot crank the generator by
+# accident at 3 a.m." gate. The switch defaults to OFF and is NOT restored across
+# reboots — after a power cycle you are back to read-only.
+#
+# Command values (genmon `buttons`, vendor/Briggs_Stratton_GC-1032.json):
+#   write 0x0001 -> Manual mode  (this is also the Stop command)
+#   write 0x0002 -> Crank/Start  (only meaningful right after a 0x0001)
+#   write 0x0004 -> Auto mode
+#
+# Start is a TWO-WRITE SEQUENCE: 0x0001 then 0x0002. A lone 0x0002 does nothing.
+#
+# On some installations these registers also actuate the transfer switch. Assume
+# yours does until you have proven otherwise, and never test this with the house
+# load connected and someone home who cares about their computer.
+#
+# HOW THE VALUE GETS WRITTEN: ESPHome's modbus_controller `output` platform is
+# write-only (it never reads the register back, which matters here -- polling a
+# command register is a good way to find an undocumented side effect). A float
+# output carries 0.0-1.0, so each command is a separate output whose `multiply`
+# scales a level of 100% to the exact word we want. Setting level 100% on
+# `gen_cmd_auto` writes 1.0 * 4 = 0x0004.
+
+switch:
+  - platform: template
+    name: "Generator Control Enabled"
+    id: control_enabled
+    optimistic: true
+    restore_mode: ALWAYS_OFF     # never comes back armed after a reboot
+    icon: mdi:lock-open-alert
+    entity_category: config
+
+output:
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    id: gen_cmd_manual
+    address: 0x0000
+    register_type: holding
+    value_type: U_WORD
+    multiply: 1                  # level 100% -> writes 0x0001 (Manual / Stop)
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    id: gen_cmd_crank
+    address: 0x0000
+    register_type: holding
+    value_type: U_WORD
+    multiply: 2                  # level 100% -> writes 0x0002 (Crank)
+
+  - platform: modbus_controller
+    modbus_controller_id: gc1032
+    id: gen_cmd_auto
+    address: 0x0000
+    register_type: holding
+    value_type: U_WORD
+    multiply: 4                  # level 100% -> writes 0x0004 (Auto)
+
+button:
+  - platform: template
+    name: "Set Auto Mode"
+    id: set_auto_mode
+    icon: mdi:autorenew
+    on_press:
+      - if:
+          condition: {switch.is_on: control_enabled}
+          then:
+            - logger.log: "GC-1032: writing 0x0004 (Auto) to holding 0x0000"
+            - output.set_level: {id: gen_cmd_auto, level: 100%}
+          else:
+            - logger.log: "GC-1032: Auto request IGNORED - control is disabled"
+
+  - platform: template
+    name: "Set Manual Mode (Stop)"
+    id: set_manual_mode_stop
+    icon: mdi:hand-back-right
+    on_press:
+      - if:
+          condition: {switch.is_on: control_enabled}
+          then:
+            - logger.log: "GC-1032: writing 0x0001 (Manual/Stop) to holding 0x0000"
+            - output.set_level: {id: gen_cmd_manual, level: 100%}
+          else:
+            - logger.log: "GC-1032: Stop request IGNORED - control is disabled"
+
+  - platform: template
+    name: "Start Engine"
+    id: start_engine
+    icon: mdi:engine
+    on_press:
+      - if:
+          condition: {switch.is_on: control_enabled}
+          then:
+            - logger.log: "GC-1032: START sequence - writing 0x0001 then 0x0002"
+            - output.set_level: {id: gen_cmd_manual, level: 100%}
+            - delay: 1s          # let the controller register Manual before cranking
+            - output.set_level: {id: gen_cmd_crank, level: 100%}
+          else:
+            - logger.log: "GC-1032: START request IGNORED - control is disabled"
