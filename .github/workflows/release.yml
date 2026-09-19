@@ -1,0 +1,111 @@
+name: Release firmware
+
+# Builds the browser-flashable image and attaches it to the release.
+#
+# WHY A FACTORY IMAGE AND NOT JUST THE OTA BIN
+#
+# A first-time user has an ESP32 with nothing on it. The OTA image assumes a
+# bootloader and partition table are already in place, so it cannot be the
+# thing you flash from a browser. firmware.factory.bin is bootloader +
+# partition table + otadata + app merged into one blob written at offset 0 --
+# the only artifact a stock board can accept.
+#
+# The partition table matters here specifically: this project ships a custom
+# one (two 1.8MB app slots plus a 256KB data partition for the flash event
+# log). A generic ESPHome image would not leave room for the ring buffer, so
+# "just flash any ESPHome build" is not a substitute.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build factory image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # secrets.yaml is gitignored, and rightly so. The build needs one to
+      # exist, but NOT one with real values: no network is compiled in (that
+      # is the whole point of the onboarding flow), and the API key and
+      # passwords are replaced by the installer on first boot. Generating a
+      # throwaway here keeps real credentials out of a public artifact.
+      - name: Generate a build-time secrets.yaml
+        run: |
+          python - <<'PY'
+          import base64, os, secrets, pathlib
+          alpha = "abcdefghjkmnpqrstuvwxyz23456789"   # no look-alikes
+          def word(n=4): return "".join(secrets.choice(alpha) for _ in range(n))
+          pathlib.Path("secrets.yaml").write_text(f"""\
+          # GENERATED FOR THE PUBLIC BUILD -- not a real configuration.
+          # Every value here is replaced during onboarding, on the device.
+          api_encryption_key: "{base64.b64encode(os.urandom(32)).decode()}"
+          ota_password: "{word()}-{word()}-{word()}"
+          ap_password: "{word()}-{word()}-{word()}"
+          web_username: "admin"
+          web_password: "{word()}-{word()}-{word()}"
+          mqtt_broker: ""
+          mqtt_username: ""
+          mqtt_password: ""
+          """)
+          PY
+
+      - name: Install ESPHome
+        run: pip install "esphome==2026.8.2"
+
+      - name: Build
+        run: esphome compile genset-gc1032.yaml
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          cp .esphome/build/b-infohub/build/firmware.factory.bin \
+             dist/b-infohub-${{ github.event.release.tag_name || 'dev' }}-factory.bin
+          cp contract/telemetry.json dist/telemetry-contract.json
+          ls -la dist
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The install page needs the image at a STABLE url, which a release asset
+      # is not -- its filename carries the tag. Pages gets an unversioned copy
+      # so https://<user>.github.io/B-Infohub/ always flashes the latest build
+      # and the link in the README never has to be edited.
+      - name: Assemble the install site
+        run: |
+          mkdir -p site
+          cp install/index.html site/
+          cp .esphome/build/b-infohub/build/firmware.factory.bin site/
+          VER="${{ github.event.release.tag_name || 'dev' }}"
+          sed "s/REPLACED_AT_RELEASE/${VER}/" install/manifest.json > site/manifest.json
+          cat site/manifest.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-pages:
+    name: Publish the install page
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

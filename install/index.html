@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Install B-Infohub</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 system-ui, sans-serif; max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem }
+  .sub { color: #6b7280; margin-top: 0 }
+  .card { border: 1px solid #8884; border-radius: 12px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .warn { border-color: #f59e0b88; background: #f59e0b14; }
+  code { background: #8882; padding: .1rem .35rem; border-radius: 4px; }
+  ol li { margin: .4rem 0 }
+  esp-web-install-button { display: block; margin: 1rem 0 }
+</style>
+
+<h1>Install B-Infohub</h1>
+<p class="sub">Flash the generator bridge straight from this page. No toolchain, no command line.</p>
+
+<div class="card warn">
+  <strong>You need Chrome or Edge on a desktop.</strong>
+  Flashing uses Web Serial, which Safari and Firefox do not implement, and which
+  mobile browsers do not expose. This is a browser limitation, not a choice —
+  there is no way around it other than using a supported browser once.
+</div>
+
+<div class="card">
+  <ol>
+    <li>Connect the bridge to your computer with a <strong>data</strong> USB cable.
+        Charge-only cables are the single most common reason the button below finds
+        nothing — they carry power but no data lines, so the board appears dead to
+        the browser while its power LED is lit.</li>
+    <li>Click <strong>Connect</strong> and pick the serial port that appears.</li>
+    <li>Wait for the flash to finish, then follow the Wi-Fi prompt in the same dialog.</li>
+  </ol>
+
+  <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+</div>
+
+<div class="card">
+  <h2 style="font-size:1.1rem;margin-top:0">After flashing</h2>
+  <p>The bridge ships with <strong>no Wi-Fi network compiled in</strong>, deliberately —
+     it is configured once, on the device, and the credentials survive future updates.
+     Three ways in, and the installer above offers the first:</p>
+  <ol>
+    <li><strong>In this page</strong> — the install dialog asks for Wi-Fi when flashing finishes.</li>
+    <li><strong>Bluetooth</strong> — the Home Assistant mobile app finds it and offers to set it up.</li>
+    <li><strong>Its own hotspot</strong> — join <code>b-infohub Setup</code> and a captive portal opens.</li>
+  </ol>
+  <p>Then add it to Home Assistant with the
+     <a href="https://github.com/brentb2529/ha-energytrak">EnergyTrak integration</a>.
+     It is discovered automatically on the same subnet; on a routed or VLAN'd
+     network, add it by IP instead.</p>
+</div>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>

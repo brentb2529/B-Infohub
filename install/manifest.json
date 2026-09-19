@@ -1,0 +1,14 @@
+{
+  "name": "B-Infohub Generator Bridge",
+  "version": "REPLACED_AT_RELEASE",
+  "home_assistant_domain": "esphome",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware.factory.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

@@ -1,183 +1,139 @@
-# B-Infohub — Briggs & Stratton generator telemetry without the InfoHub
+# B-Infohub
 
-## Goal
+**Local telemetry from a Briggs & Stratton standby generator — no subscription, no cell modem, no cloud.**
 
-Replace the Briggs & Stratton InfoHub with a local ESP32 + RS-485 bridge that speaks
-Modbus RTU directly to the **GC-1030/1031/1032** controller. No cell modem, no
-subscription, no cloud round-trip — and considerably more data than the InfoHub ever
-surfaced.
+A small ESP32 board that plugs into the RS-485 port your generator already has and
+speaks Modbus to its GC-1030/1031/1032 controller directly. Home Assistant gets the
+readings in about a second, over your own network.
 
-The InfoHub is not decoding anything proprietary. It is a Modbus master with a cell
-modem and a billing relationship attached. This project just becomes the master
-instead.
+> The InfoHub is not decoding anything proprietary. It is a Modbus master with a cell
+> modem and a billing relationship attached. This becomes the master instead — and you
+> can keep the InfoHub connected alongside it if you want the cellular path as backup.
 
-**What you get over the InfoHub:** per-phase voltages, currents, kW, kVA, kVAR and
-power factor; cumulative kWh; oil pressure, coolant temp, battery voltage, RPM;
-lifetime starts, trips and run hours; **51 individually decoded fault conditions**
-instead of one "fault" flag; the raw status word; and optional start/stop/auto control.
+---
 
-~146 entities, all local, all in Home Assistant.
+## What you get
 
-## Status
+| | EnergyTrak cloud | B-Infohub |
+| --- | --- | --- |
+| Readings | 34 | **130+** |
+| Freshness | minutes | **~1 second** |
+| Faults | one "fault" flag | **34 individually decoded alarms** |
+| Works without internet | no | **yes** |
+| Subscription | yes | no |
 
-| Piece | State |
+Per-leg voltages and currents, kW / kVA / kVAr, power factor, cumulative energy,
+coolant temperature, battery voltage, engine RPM and hours, lifetime starts and trips,
+the raw controller status word, and each fault condition as its own entity you can
+automate on.
+
+It also records alarms to onboard flash, so a fault that happens while Home Assistant
+is down or the network is out is still reported when things come back — the one case
+cloud monitoring cannot cover.
+
+## What you need
+
+- A Briggs & Stratton standby generator with a **GC-1030, GC-1031 or GC-1032**
+  controller (check the label on the panel).
+- A **B-Infohub board** — see [Getting the hardware](#getting-the-hardware).
+- Home Assistant, with [HACS](https://hacs.xyz) installed.
+- A Chrome or Edge browser on a desktop, once, to flash the board.
+
+No soldering. No toolchain. No command line.
+
+## Install
+
+### 1. Flash the board
+
+Connect it to your computer with a **data** USB cable and open the installer:
+
+### → **[Install B-Infohub](https://brentb2529.github.io/B-Infohub/)**
+
+Click Connect, pick the serial port, and wait. The page will then ask for your Wi-Fi.
+
+<sub>A charge-only USB cable is the most common reason nothing appears in the port list —
+it powers the board but carries no data, so the board looks dead to the browser while its
+power light is on. Web Serial needs Chrome or Edge; Safari and Firefox do not implement it.</sub>
+
+### 2. Wire it to the generator
+
+**Switch the generator to OFF at the panel first.** Two wires, into the RS-485
+terminals the controller already exposes — [wiring guide](docs/wiring.md), including
+where the terminals are on each controller and how to keep an existing InfoHub
+connected at the same time.
+
+### 3. Add it to Home Assistant
+
+Install the **[EnergyTrak integration](https://github.com/brentb2529/ha-energytrak)**
+from HACS, then **Settings → Devices & Services → Add Integration → EnergyTrak**.
+
+The bridge is discovered automatically if it is on the same subnet. On a routed or
+VLAN'd network — which includes most setups where the generator is on a different
+segment — choose **Local B-Infohub bridge** and enter its IP.
+
+You do **not** need an EnergyTrak account. The integration supports three shapes:
+
+- **Bridge only** — no subscription at all
+- **Cloud only** — the original behaviour, no hardware
+- **Both** — the bridge is used while it is healthy, and the cloud takes over
+  automatically if it is not
+
+## Getting the hardware
+
+The board is built in small batches and is **not sold through a shop**. If you want
+one, open a [GitHub issue](https://github.com/brentb2529/B-Infohub/issues) or get in
+touch — see the ordering note below.
+
+<!-- ORDERING DETAILS: fill these in before publishing.
+     - How should people contact you (issue / email / form)?
+     - What is supplied: bare PCB, assembled board, assembled + enclosure?
+     - Price, and whether shipping is US-only.
+     - Any lead time or batch-size caveat. -->
+
+> **Ordering:** _contact details and what is supplied to be filled in._
+
+Everything needed to have one made independently is in this repository —
+schematic, layout, gerbers and a JLCPCB-ready fab package in
+[`hardware/pcb/`](hardware/pcb/) — and the firmware is MIT licensed. Buying a board
+is a convenience, not a requirement.
+
+## If something looks wrong
+
+The bridge reports its own health, because a monitor that fails silently is worse
+than no monitor:
+
+| Entity | What it means when it is unhappy |
 | --- | --- |
-| Register decoding | **Validated against the real controller**, 2026-08-31 |
-| ESPHome firmware, read-only | `esphome config` clean; decodes proven on live data, **not yet flashed** |
-| Control (start/stop/auto) | Written, validates, **gated off by default** — see below |
-| Bench probe tooling | Written, read-only by construction, **exercised end-to-end against a simulator** |
-| Decoder tests | `tools/test_decoders.py` — 50 alarm decoders + status word, all passing |
-| HA → Grafana push | Written, follows the existing B-Panels pipeline |
-| Grafana dashboard | Generated, 27 panels |
+| **Bridge reachable** | the board is not answering Home Assistant — power or Wi-Fi |
+| **Generator answering bus** | the board is fine; the generator has gone quiet on RS-485 |
+| **Controller clock age** | the controller is answering but its clock has stopped — it has hung |
+| **Bridge silence** | the board holds its connection but has stopped sending |
+| **Wi-Fi Signal** | below about −72 dBm an ESP32 stays associated but cannot be reached |
 
-The probe has been run end to end against `tools/fake_gc1032.py`, a simulated
-controller on a pseudo-terminal: `scan`, `dump` and `sweep` all behave correctly,
-including skipping the dead address holes and surfacing undocumented registers that
-change between passes. `tools/test_decoders.py` evaluates all 50 generated alarm
-lambdas plus the status word against known register states.
+Those are deliberately five separate signals rather than one "online" flag. They fail
+independently and each one points at a different place to look.
 
-What a pty cannot test: baud/parity detection (line settings are ignored, so `scan`
-matches every combination), bus turnaround, and anything electrical.
+There are also five LEDs on the board readable through the lid, which is all you have
+standing at the generator with no phone signal. [How to read
+them](docs/bring-up.md#status-leds).
 
-**2026-08-31: first contact with the real controller — it works.** Bus parameters
-found, all 87 registers read, a full start/run/stop cycle captured at 1 Hz, and three
-firmware bugs found and fixed against live data. See
-[`docs/field-findings-2026-08-31.md`](docs/field-findings-2026-08-31.md).
+## Documentation
 
-Still untested: the control (write) path. The register map is genmon's, which is
-well-proven, but every decode in `packages/gc1032-status.yaml` should be confirmed
-against one exercise cycle before you trust it.
-
-## Repo layout
-
-| Path | Purpose |
+| | |
 | --- | --- |
-| `genset-gc1032.yaml` | Device config — ESP32-DevKitC + MAX485. Start here. |
-| `packages/base.yaml` | Wi-Fi / API / OTA / web / Improv / mDNS / diagnostics |
-| `packages/mqtt.yaml` | MQTT alongside the native API (discovery deliberately off) |
-| `packages/gc1032-power.yaml` | Electrical measurements, 0x0000–0x002C |
-| `packages/gc1032-engine.yaml` | Engine, fuel, battery, runtime, clock |
-| `packages/gc1032-status.yaml` | Raw fault registers + status-word decode |
-| `packages/gc1032-alarms.yaml` | **Generated** — 51 fault entities |
-| `packages/gc1032-control.yaml` | **DANGEROUS** — start/stop/auto. Not included by default. |
-| `tools/gc1032_probe.py` | Read-only bench probe for the FTDI USB-RS485 cable |
-| `tools/adapter_check.py` | Bench-checks the USB-RS485 adapter with nothing connected |
-| `tools/fake_gc1032.py` | Simulated GC-1032 on a pty — test the probe with no generator |
-| `tools/test_decoders.py` | Verifies the generated alarm/status decoders against known states |
-| `tools/gen_alarms.py` | Regenerates the alarms package from the register map |
-| `tools/gen_dashboard.py` | Regenerates the Grafana dashboard |
-| `ha/packages/` | Home Assistant: metric attributes + Grafana Cloud push |
-| `grafana/dashboards/` | **Generated** dashboard JSON |
-| `vendor/` | Pinned genmon register map + provenance |
-| `docs/wiring.md` | FTDI hookup, ESP32 wiring, 12 V power front end, grounding |
-| `docs/register-map.md` | Register tables and the four traps |
-| `docs/field-findings-2026-08-31.md` | **What the real hardware actually did** — read this |
-| `captures/` | Live captures: full run cycle at 1 Hz, sweeps, at-rest dumps |
+| [Wiring](docs/wiring.md) | terminals, cable, termination, keeping the InfoHub |
+| [Bring-up](docs/bring-up.md) | first boot, LEDs, proving the bus |
+| [Register map](docs/register-map.md) | every address, what it means, what it returns |
+| [Field findings](docs/field-findings-2026-08-31.md) | what a real controller actually answers |
+| [Development](docs/development.md) | building the firmware, the contract, the tooling |
 
-## Bring-up order
+## Safety and scope
 
-Do these in order. Each step de-risks the next.
+A standby generator is life-safety equipment. This is a **read-only monitor**: it does
+not start, stop, or configure anything, and engine control is deliberately not
+implemented.
 
-### 1. Prove the bus exists (no soldering, no ESP32)
-
-You already have the FTDI USB-RS485 cable. Wire it per
-[`docs/wiring.md` §2](docs/wiring.md) — and note the colour collision: the FTDI cable
-has a yellow wire and so does the generator harness, and they are different signals.
-
-```bash
-pip install pyserial
-ls /dev/cu.usbserial-*                                   # NOT /dev/tty.* -- see docs/wiring.md
-python3 tools/adapter_check.py --port /dev/cu.usbserial-XXXXXXXX   # do this at the desk first
-python3 tools/gc1032_probe.py scan --port /dev/cu.usbserial-XXXXXXXX
-```
-
-`adapter_check.py` verifies the port and settles whether your adapter needs RXD+/RXD-
-jumpered, without the generator being involved at all. **Already run for this
-adapter** (`/dev/cu.usbserial-A94C31KL`): it is full-duplex RS-422 silicon and **needs
-the jumpers** — RXD+ to T/R+, RXD- to T/R-, both joined pairs going to bus A and B.
-See `docs/wiring.md`.
-
-`scan` brute-forces baud, parity and slave id and never writes anything. The full
-240-combination sweep takes about **35 seconds**. If it finds
-nothing, swap A and B and run it again before concluding anything.
-
-Then see what is actually there:
-
-```bash
-python3 tools/gc1032_probe.py dump  --port /dev/cu.usbserial-XXXXXXXX --baud 19200 --parity N
-python3 tools/gc1032_probe.py sweep --port /dev/cu.usbserial-XXXXXXXX --baud 19200 --parity N
-```
-
-`sweep` is the one that answers "the controller must know more than the InfoHub told
-me" — it probes the whole low address space twice and reports which **undocumented**
-registers respond and which of them moved. Run it again during an exercise cycle.
-
-### 2. Build the bridge
-
-Set `modbus_baud`, `modbus_parity` and `modbus_address` in `genset-gc1032.yaml` to
-whatever step 1 found.
-
-```bash
-python3 -m venv .venv && .venv/bin/pip install esphome
-cp secrets.yaml.example secrets.yaml     # then fill it in
-.venv/bin/esphome run genset-gc1032.yaml # USB the first time, OTA after
-```
-
-### 3. Confirm the decodes before trusting the dashboard
-
-Watch `Status Register Raw` through one full exercise cycle. Expect `0x6800` at rest
-and `0x7100` while exercising. If those do not match, fix
-`packages/gc1032-status.yaml` before wiring up alerts.
-
-Also sanity-check `Percentage Load` under real load — genmon's own map is internally
-inconsistent about whether it needs a ×0.1 scale, and the sensor carries a comment
-saying so.
-
-### 4. Grafana
-
-Copy `ha/packages/*.yaml` into `<config>/packages/`, then import
-`grafana/dashboards/b-infohub-genset.json`.
-
-**Verify the entity ids first.** `ha/packages/b_infohub_customize.yaml` is the one file
-that must name entity ids, and it assumes `sensor.genset_*`. If HA assigned a `_2`
-suffix, the customize entries bind to nothing — silently, because customize does not
-warn about unknown ids. Developer Tools → States, filter on `genset`.
-
-The push writes a **`genset_*`** measurement, deliberately separate from the existing
-`generator_*` series that B-Panels' cloud poller produces. Both dashboards run side by
-side. See the header of `b_infohub_customize.yaml` for why colliding on the same
-attribute namespace would have silently corrupted the old dashboard rather than
-failing loudly.
-
-## Control is off by default
-
-`packages/gc1032-control.yaml` can start and stop the engine, and on some
-installations actuate the transfer switch. It is behind two interlocks:
-
-1. The include in `genset-gc1032.yaml` is commented out.
-2. A **Generator Control Enabled** switch that defaults off and is *not* restored
-   across reboots.
-
-Leave it read-only until the telemetry has been right for a while. There is no hurry:
-reading is the whole value proposition, and writing is a five-minute uncomment
-whenever you want it.
-
-## Things that will bite you
-
-- **One master.** The InfoHub must come off the RS-485 pair. Two masters means
-  collisions and an InfoHub reporting comm faults to your dealer.
-- **You lose the cell modem.** The generator runs when the grid is down, so the
-  network path has to survive the outage too. **Resolved for this install: the house
-  is on UPS.** LAN-side monitoring (bridge → AP → Home Assistant) therefore keeps
-  working through an outage. Remote viewing additionally depends on the ISP's own
-  equipment staying up, which is outside the UPS.
-- **Alarms are active low.** A nibble of `0x0` means the fault *is* present.
-- **The address space has holes that time out.** See `docs/register-map.md`.
-- **Cranking browns out cheap buck converters.** Use a wide-input part; see
-  `docs/wiring.md` §4.
-
-## Credit
-
-The register map is [genmon](https://github.com/jgyates/genmon)'s
-`Briggs_Stratton_GC-1032.json` — pinned in `vendor/` with provenance. Without it this
-would have been a logic-analyzer project.
+Do not rely on it as your only alerting for anything that matters. It is unofficial,
+unaffiliated with Briggs & Stratton, and provided as-is under the MIT licence with no
+warranty. Wiring anything into a generator is your responsibility; if you are not
+comfortable working in the panel, have an electrician do it.
