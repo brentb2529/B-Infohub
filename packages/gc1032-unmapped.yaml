@@ -25,23 +25,19 @@
 # -- registers that are dead at rest are exactly the ones that may populate while the
 # engine is turning.
 
-sensor:
-  - platform: modbus_controller
-    modbus_controller_id: gc1032
-    name: "Raw 0x002D"
-    id: raw_0x002d
-    address: 0x002D
-    register_type: read
-    value_type: U_WORD
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    disabled_by_default: true
-
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x002E", id: raw_002e, address: 0x002E, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x002F", id: raw_002f, address: 0x002F, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x0030", id: raw_0030, address: 0x0030, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x0031", id: raw_0031, address: 0x0031, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x0032", id: raw_0032, address: 0x0032, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x0037", id: raw_0037, address: 0x0037, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x003E", id: raw_003e, address: 0x003E, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
-  - {platform: modbus_controller, modbus_controller_id: gc1032, name: "Raw 0x003F", id: raw_003f, address: 0x003F, register_type: read, value_type: U_WORD, accuracy_decimals: 0, entity_category: diagnostic, disabled_by_default: true}
+# ALL NINE REMOVED -- they cost RAM and have never carried data.
+#
+# The sweep found these nine answering, and every one has returned 0xFFFF
+# ("sensor not present") every time it has ever been read -- including through a
+# complete crank-run-cooldown cycle on 2026-09-18, which is exactly the
+# condition the note above said might populate them. They did not.
+#
+# They came out because the bridge ran out of heap. Adding the controller-clock
+# watchdog pushed a build to abort on boot inside the API send buffer --
+# operator new[] failing -- and the bootloader rolled it back. On a board at 82%
+# static RAM, nine entities that have never produced a value are not a free
+# research instrument; they are the reason a real health check would not fit.
+#
+# Nothing is lost for hunting: tools/gc1032_probe.py sweeps these addresses
+# without needing entities for them, which is the better tool for it anyway.
+# Restoring them is one `git revert`.

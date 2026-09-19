@@ -216,6 +216,18 @@ sensor:
     internal: true
     id: clock_minutes_raw
     force_new_range: true
+    # Controller-clock watchdog: see "Controller Clock Age" in
+    # packages/diagnostics.yaml. The minute lives in the high byte, and its
+    # advancing is the only proof that the controller's own firmware is
+    # executing rather than merely answering Modbus with stale registers.
+    on_value:
+      - lambda: |-
+          if (isnan(x)) return;
+          int16_t minute = (int16_t) ((((uint16_t) x) & 0xFF00) >> 8);
+          if (minute != id(last_clock_minute)) {
+            id(last_clock_minute) = minute;
+            id(last_clock_change_ms) = millis();
+          }
 
   - platform: modbus_controller
     modbus_controller_id: gc1032

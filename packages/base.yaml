@@ -236,17 +236,26 @@ text_sensor:
     entity_category: diagnostic
 
 sensor:
+  # `id:` is required for contract/gen.py to see these at all -- it enumerates
+  # entities that have BOTH an id and a name. Without one the sensor exists on
+  # the device, publishes happily over the native API, and is invisible to
+  # everything downstream. That is exactly what happened here: the bridge had
+  # been reporting RSSI the whole time and nothing could read it, so a link
+  # degrading to -76 dBm looked like a wedged device instead of a bad radio.
   - platform: wifi_signal
     name: "Wi-Fi Signal"
+    id: wifi_rssi
     update_interval: 60s
     entity_category: diagnostic
 
   - platform: uptime
     name: "Uptime"
+    id: bridge_uptime
     entity_category: diagnostic
 
   - platform: internal_temperature
     name: "ESP Internal Temperature"
+    id: esp_temp
     entity_category: diagnostic
     # Worth watching. This board lives on a generator pad; if this climbs past ~80 C
     # in summer the enclosure needs shade or a vent.

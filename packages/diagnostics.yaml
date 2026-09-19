@@ -26,6 +26,16 @@ globals:
     restore_value: false
     initial_value: '0'
 
+  # Controller-clock watchdog. See the Controller Clock Age sensor.
+  - id: last_clock_change_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: last_clock_minute
+    type: int16_t
+    restore_value: false
+    initial_value: '-1'
+
 sensor:
   # The witness. A `copy` sensor rather than an on_value bolted onto the real
   # battery_voltage entity, so the generated data packages stay untouched and
@@ -36,6 +46,48 @@ sensor:
     internal: true
     on_value:
       - lambda: 'id(last_good_ms) = millis();'
+
+  # SECOND WITNESS: THE GENERATOR'S OWN CLOCK.
+  #
+  # bus_age proves bytes are arriving. It does NOT prove the machine producing
+  # them is still running: a controller whose firmware has hung can keep its
+  # Modbus responder alive and keep answering with whatever was in its
+  # registers when it stopped. Every reading stays plausible, the bus looks
+  # perfect, and nothing anywhere says the numbers stopped meaning anything.
+  #
+  # The GC-1032 keeps a real-time clock and exposes the minute in the high byte
+  # of clock_minutes_raw. That minute advancing is proof the controller's own
+  # firmware is executing, which no amount of successful register reads can
+  # give you. It is the one signal here that comes from the machine being ALIVE
+  # rather than merely RESPONSIVE.
+  #
+  # Published as an age in seconds rather than a boolean on purpose: a
+  # binary_sensor would be swept into alarm_keys by contract/gen.py and start
+  # inflating active_alarm_count, and this is a fault of the BRIDGE'S VIEW of
+  # the generator, not a fault the generator is reporting. A number also lets a
+  # threshold be tuned without a firmware change.
+  #
+  # THE TICK IS COUNTED ON THE EXISTING REGISTER, NOT VIA A `copy` SENSOR.
+  # bus_witness uses copy because battery_voltage lives in a GENERATED package
+  # and regenerating it would silently drop an on_value hook. clock_minutes_raw
+  # is hand-written and already `internal: true`, so hooking it directly costs
+  # nothing. That matters more than it sounds: the first version of this added
+  # two entities and the firmware aborted on boot out of heap --
+  # operator new[] failing inside the API's send buffer -- and rolled back.
+  # This board has no RAM to spare, so every entity now has to earn its place.
+  - platform: template
+    name: "Controller Clock Age"
+    id: controller_clock_age
+    unit_of_measurement: s
+    accuracy_decimals: 0
+    icon: mdi:clock-alert-outline
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: |-
+      // Unknown until the clock has been seen to tick once. Reporting 0 before
+      // then would claim freshness we have not observed.
+      if (id(last_clock_change_ms) == 0) return NAN;
+      return (millis() - id(last_clock_change_ms)) / 1000.0f;
 
   - platform: template
     name: "Bus Age"

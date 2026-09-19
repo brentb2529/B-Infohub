@@ -119,6 +119,31 @@ EXCLUDE_LOCAL_ONLY = {
     "run_time_hours",          # duplicate of engine_run_time
 }
 
+# Diagnostics about the BRIDGE rather than the generator, published anyway.
+#
+# gen.py drops everything marked `entity_category: diagnostic`, which is right
+# for the generator's own registers -- raw scratch values and research
+# instruments have no business in a dashboard. It was wrong for these three.
+#
+# Wi-Fi signal in particular: the bridge had been measuring it all along, and
+# because it was diagnostic it never reached Home Assistant, so a link
+# degrading to -76 dBm -- associated, answering ping, unable to complete an API
+# handshake -- presented as a wedged device with no way to tell otherwise. The
+# number that would have explained it in one glance was being thrown away one
+# layer from where it was needed.
+#
+# Uptime makes a silent self-reboot visible instead of inferrable, and the
+# internal temperature matters for a sealed box on a generator pad in summer.
+INCLUDE_DIAGNOSTICS = {
+    # Seconds since the generator's own clock last advanced. Proves the
+    # CONTROLLER is executing, not merely answering -- a hung controller can
+    # keep its Modbus responder alive and serve stale registers forever.
+    "controller_clock_age",
+    "wifi_rssi",
+    "bridge_uptime",
+    "esp_temp",
+}
+
 # Alarms, for active_alarm_count / active_alarms. Filled by gen.py from the
 # binary_sensor list minus the ones that are states rather than faults.
 NOT_A_FAULT = {

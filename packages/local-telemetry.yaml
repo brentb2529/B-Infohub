@@ -103,7 +103,7 @@ interval:
                   root["has_malfunction"] = id(common_shutdown).state;
                   root["monitor_online"] = true;
                   
-                  // --- local-only superset: 100 keys the cloud never had ---
+                  // --- local-only superset: 104 keys the cloud never had ---
                   if (!std::isnan(id(alarm_reg_40).state)) root["alarm_register_1"] = id(alarm_reg_40).state;
                   if (!std::isnan(id(alarm_reg_41).state)) root["alarm_register_2"] = id(alarm_reg_41).state;
                   if (!std::isnan(id(alarm_reg_42).state)) root["alarm_register_3"] = id(alarm_reg_42).state;
@@ -132,7 +132,9 @@ interval:
                   root["auxiliary_input_i"] = id(auxiliary_input_i).state;
                   root["battery_high_voltage"] = id(battery_high_voltage).state;
                   root["battery_low_voltage"] = id(battery_low_voltage).state;
+                  if (!std::isnan(id(bridge_uptime).state)) root["uptime"] = id(bridge_uptime).state;
                   if (!std::isnan(id(bus_witness).state)) root["bus_witness"] = id(bus_witness).state;
+                  if (!std::isnan(id(controller_clock_age).state)) root["controller_clock_age"] = id(controller_clock_age).state;
                   if (!std::isnan(id(coolant_temperature).state)) root["coolant_temperature"] = id(coolant_temperature).state;
                   if (!std::isnan(id(cumulative_apparent_energy).state)) root["cumulative_apparent_energy"] = id(cumulative_apparent_energy).state;
                   if (!std::isnan(id(cumulative_energy).state)) root["cumulative_energy"] = id(cumulative_energy).state;
@@ -146,6 +148,7 @@ interval:
                   root["engine_running"] = id(engine_running).state;
                   root["engine_starting"] = id(engine_starting).state;
                   root["engine_under_speed"] = id(engine_under_speed).state;
+                  if (!std::isnan(id(esp_temp).state)) root["esp_internal_temperature"] = id(esp_temp).state;
                   root["exercising"] = id(exercising).state;
                   root["extended_over_load_trip"] = id(extended_over_load_trip).state;
                   root["fuel_cap_open_circuit"] = id(fuel_cap_open_circuit).state;
@@ -204,3 +207,4 @@ interval:
                   if (!std::isnan(id(utility_l3_voltage).state)) root["utility_l3_voltage"] = id(utility_l3_voltage).state;
                   root["utility_power_failure"] = id(utility_power_failure).state;
                   root["water_level_switch"] = id(water_level_switch).state;
+                  if (!std::isnan(id(wifi_rssi).state)) root["wi-fi_signal"] = id(wifi_rssi).state;

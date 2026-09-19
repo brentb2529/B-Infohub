@@ -17,7 +17,7 @@
 #
 # WHAT IS SERVED
 #
-# All 84 registers across 0x0000-0x0056, reconstructed from the
+# All 75 registers across 0x0000-0x0056, reconstructed from the
 # scaled sensor values by inverting each filter's multiply. Reconstruction
 # rather than a second raw read of the same addresses: a duplicate read would
 # double the traffic on a 9600 baud bus that the field notes already warn
@@ -394,54 +394,6 @@ modbus_server:
           // Cumulative Reactive Energy -- exact 32-bit capture
           if (!id(feat_passthrough).state) return {};
           return (uint32_t) id(raw_dword_002b);
-      - address: 0x002D
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x002D
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_0x002d).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x002E
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x002E
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_002e).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x002F
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x002F
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_002f).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x0030
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x0030
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_0030).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x0031
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x0031
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_0031).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x0032
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x0032
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_0032).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
       - address: 0x0033
         value_type: U_WORD
         read_lambda: |-
@@ -474,14 +426,6 @@ modbus_server:
           float v = id(fuel_volume).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
           return (uint16_t) lroundf(v / 0.1f);
-      - address: 0x0037
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x0037
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_0037).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
       - address: 0x0038
         value_type: U_WORD
         read_lambda: |-
@@ -528,22 +472,6 @@ modbus_server:
           // Engine Run Time Minutes
           if (!id(feat_passthrough).state) return {};
           float v = id(run_time_minutes).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x003E
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x003E
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_003e).state;
-          if (std::isnan(v)) return (uint16_t) 0xFFFF;
-          return (uint16_t) lroundf(v);
-      - address: 0x003F
-        value_type: U_WORD
-        read_lambda: |-
-          // Raw 0x003F
-          if (!id(feat_passthrough).state) return {};
-          float v = id(raw_003f).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
           return (uint16_t) lroundf(v);
       - address: 0x0040

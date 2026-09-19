@@ -65,7 +65,8 @@ missing = [f"{k} -> {lid}" for k, lid, _ in T.SHARED if lid not in ents]
 if missing: sys.exit("SHARED refers to ids that do not exist:\n  " + "\n  ".join(missing))
 
 local_only = [(i, m) for i, m in ents.items()
-              if not m["diag"] and i not in shared_ids and i not in T.EXCLUDE_LOCAL_ONLY]
+              if (not m["diag"] or i in T.INCLUDE_DIAGNOSTICS)
+              and i not in shared_ids and i not in T.EXCLUDE_LOCAL_ONLY]
 # Alarms worth logging: exclude the ones that are ASSERTED ON A HEALTHY UNIT.
 #
 # On this hardware an alarm nibble of 0 means both "fault asserted" and "input
