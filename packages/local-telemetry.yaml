@@ -35,7 +35,6 @@ interval:
                   if (id(engine_failed_to_stop).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Engine Failed to Stop"; }
                   if (id(engine_over_speed).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Engine Over Speed"; }
                   if (id(engine_under_speed).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Engine Under Speed"; }
-                  if (id(exercising).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Exercising"; }
                   if (id(gen_l1_phase_high_voltage).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Gen L1 Phase High Voltage"; }
                   if (id(gen_l1_phase_low_voltage).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Gen L1 Phase Low Voltage"; }
                   if (id(gen_l2_phase_high_voltage).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Gen L2 Phase High Voltage"; }
@@ -56,7 +55,6 @@ interval:
                   if (id(low_voltage_failure_1_ph_ph).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Low Voltage Failure 1 (Ph-Ph)"; }
                   if (id(low_voltage_failure_2_ph_ph).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Low Voltage Failure 2 (Ph-Ph)"; }
                   if (id(magnetic_pick_up_fault).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Magnetic Pick Up Fault"; }
-                  if (id(scheduled_exercise).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Scheduled Exercise in Progress"; }
                   if (id(temperature_circuit_open).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Temperature Circuit Open"; }
                   if (id(unbalanced_load).state) { _ac++; if (!_al.empty()) _al += ", "; _al += "Unbalanced Load"; }
                   

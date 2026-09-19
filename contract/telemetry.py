@@ -147,6 +147,26 @@ INCLUDE_DIAGNOSTICS = {
 # Alarms, for active_alarm_count / active_alarms. Filled by gen.py from the
 # binary_sensor list minus the ones that are states rather than faults.
 NOT_A_FAULT = {
+    # THE WEEKLY EXERCISE IS NOT A FAULT.
+    #
+    # These two live in the same alarm nibbles as real faults, so they were
+    # swept in with them -- and counted. Every scheduled exercise therefore
+    # pushed active_alarm_count to 2, which sets the `fault` flag (it is
+    # count > 0 OR fault_condition), which turned the generator tile red and
+    # fired GeneratorFaultActive, for the machine doing exactly what it is
+    # supposed to do once a week.
+    #
+    # Caught live during a run on 2026-09-19: active_alarm_count 2, fault on,
+    # and the only two bits asserted were these.
+    #
+    # The Grafana push already excluded them by hand, which fixed the symptom
+    # one layer downstream and left the cause in place. This is the cause.
+    # Keyed by ESPHome ID, not object_id -- the filter is `i not in
+    # NOT_A_FAULT` where i is the id. "Scheduled Exercise In Progress" has the
+    # id `scheduled_exercise`, so the object_id spelling silently matched
+    # nothing and left it counted.
+    "exercising", "scheduled_exercise",
+
     "engine_running", "engine_starting", "utility_power_failure",
     "dg_phase_rotation", "mains_phase_rotation",
     "auxiliary_input_a", "auxiliary_input_b", "auxiliary_input_c",
