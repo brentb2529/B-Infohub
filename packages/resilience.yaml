@@ -87,6 +87,12 @@ text_sensor:
 
   - platform: template
     name: "Last Reset Reason"
+    # An id is not optional here even though nothing references it in C++:
+    # contract/gen.py keys every entity by its id, and an entity without one
+    # is invisible to the contract and can never reach Home Assistant. This
+    # sensor answers "panic or brownout?", which is the first question after
+    # any unexplained restart, and it was unreachable for exactly that reason.
+    id: last_reset_reason
     icon: mdi:restart-alert
     entity_category: diagnostic
     update_interval: never
@@ -172,6 +178,13 @@ esphome:
     - priority: -100
       then:
         - component.update: boot_partition
+        # `update_interval: never` means NEVER, not "once at startup".
+        # boot_partition has always been nudged explicitly here; Last Reset
+        # Reason never was, so it sat un-published for the life of the device
+        # and read blank in Home Assistant. The one question after an
+        # unexplained restart is "panic or brownout?", and the sensor that
+        # answers it had never once produced a value.
+        - component.update: last_reset_reason
         - logger.log:
             level: INFO
             format: "Boot complete on partition %s"

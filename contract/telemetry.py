@@ -165,6 +165,42 @@ INCLUDE_DIAGNOSTICS = {
     "wifi_rssi",
     "bridge_uptime",
     "esp_temp",
+
+    # ---- ESP32 runtime health -------------------------------------------
+    # The bridge ran out of heap once, aborted on boot and was saved by OTA
+    # rollback; nine sensors were then deleted to recover 1,528 bytes. Every
+    # change since has been argued in terms of RAM, and none of it was
+    # visible in Home Assistant. Largest-free-block matters as much as the
+    # total: the failure was a contiguous allocation, which a fragmented heap
+    # refuses even with plenty free.
+    "free_heap",
+    "heap_max_block",
+    "loop_time",
+
+    # ---- RS-485 bus quality ---------------------------------------------
+    # bus_healthy and bus_age already reach HA as derived fields, but the
+    # SUCCESS RATE never did -- and it is the one that shows degradation
+    # before it becomes an outage. It read 50% while the holding-register
+    # sweep was corrupting framing and climbed back to 96% afterwards;
+    # none of that was visible outside the ESPHome log.
+    "bus_success_rate",
+    "bus_reads_ok",
+    "bus_reads_missed",
+
+    # ---- Evidence the safety nets are real -------------------------------
+    # Which OTA slot is running and whether it is marked valid, and why the
+    # chip last restarted. `panic` and `brownout` are the two answers that
+    # change what you do next, and neither was reachable from HA.
+    "boot_partition",
+    "last_reset_reason",
+
+    # ---- Flash event log ------------------------------------------------
+    # The backlog that replayed forever and paged every 30 seconds. Its
+    # counters were only ever readable over the ESPHome API, so the storm was
+    # diagnosed by hand. Published, the divergence is a graph.
+    "backlog_count",
+    "backlog_cursor",
+    "backlog_pending",
 }
 
 # Alarms, for active_alarm_count / active_alarms. Filled by gen.py from the

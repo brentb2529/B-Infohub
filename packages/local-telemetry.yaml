@@ -103,7 +103,7 @@ interval:
                   root["has_malfunction"] = id(common_shutdown).state;
                   root["monitor_online"] = true;
                   
-                  // --- local-only superset: 107 keys the cloud never had ---
+                  // --- local-only superset: 118 keys the cloud never had ---
                   if (!std::isnan(id(alarm_reg_40).state)) root["alarm_register_1"] = id(alarm_reg_40).state;
                   if (!std::isnan(id(alarm_reg_41).state)) root["alarm_register_2"] = id(alarm_reg_41).state;
                   if (!std::isnan(id(alarm_reg_42).state)) root["alarm_register_3"] = id(alarm_reg_42).state;
@@ -130,9 +130,16 @@ interval:
                   root["auxiliary_input_g"] = id(auxiliary_input_g).state;
                   root["auxiliary_input_h"] = id(auxiliary_input_h).state;
                   root["auxiliary_input_i"] = id(auxiliary_input_i).state;
+                  if (!std::isnan(id(backlog_count).state)) root["event_log_records"] = id(backlog_count).state;
+                  if (!std::isnan(id(backlog_cursor).state)) root["event_log_cursor"] = id(backlog_cursor).state;
+                  if (!std::isnan(id(backlog_pending).state)) root["event_log_pending"] = id(backlog_pending).state;
                   root["battery_high_voltage"] = id(battery_high_voltage).state;
                   root["battery_low_voltage"] = id(battery_low_voltage).state;
+                  if (!id(boot_partition).state.empty()) root["boot_partition"] = id(boot_partition).state;
                   if (!std::isnan(id(bridge_uptime).state)) root["uptime"] = id(bridge_uptime).state;
+                  if (!std::isnan(id(bus_reads_missed).state)) root["bus_reads_missed"] = id(bus_reads_missed).state;
+                  if (!std::isnan(id(bus_reads_ok).state)) root["bus_reads_ok"] = id(bus_reads_ok).state;
+                  if (!std::isnan(id(bus_success_rate).state)) root["bus_success_rate"] = id(bus_success_rate).state;
                   if (!std::isnan(id(bus_witness).state)) root["bus_witness"] = id(bus_witness).state;
                   if (!std::isnan(id(controller_clock_age).state)) root["controller_clock_age"] = id(controller_clock_age).state;
                   if (!std::isnan(id(controller_clock_skew).state)) root["controller_clock_skew"] = id(controller_clock_skew).state;
@@ -153,6 +160,7 @@ interval:
                   if (!std::isnan(id(esp_temp).state)) root["esp_internal_temperature"] = id(esp_temp).state;
                   root["exercising"] = id(exercising).state;
                   root["extended_over_load_trip"] = id(extended_over_load_trip).state;
+                  if (!std::isnan(id(free_heap).state)) root["free_heap"] = id(free_heap).state;
                   root["fuel_cap_open_circuit"] = id(fuel_cap_open_circuit).state;
                   if (!std::isnan(id(fuel_level).state)) root["fuel_level"] = id(fuel_level).state;
                   root["fuel_theft"] = id(fuel_theft).state;
@@ -177,6 +185,7 @@ interval:
                   if (!std::isnan(id(generator_l3_voltage).state)) root["generator_l3_voltage"] = id(generator_l3_voltage).state;
                   root["generator_low_frequency"] = id(generator_low_frequency).state;
                   root["generator_overload"] = id(generator_overload).state;
+                  if (!std::isnan(id(heap_max_block).state)) root["largest_free_block"] = id(heap_max_block).state;
                   root["high_coolant_temperature"] = id(high_coolant_temperature).state;
                   root["high_oil_pressure_detected"] = id(high_oil_pressure_detected).state;
                   root["high_voltage_warning_1__ph-ph_"] = id(high_voltage_warning_1_ph_ph).state;
@@ -186,6 +195,8 @@ interval:
                   if (!std::isnan(id(l3_power).state)) root["l3_power"] = id(l3_power).state;
                   if (!std::isnan(id(l3_power_factor).state)) root["l3_power_factor"] = id(l3_power_factor).state;
                   if (!std::isnan(id(l3_reactive_power).state)) root["l3_reactive_power"] = id(l3_reactive_power).state;
+                  if (!id(last_reset_reason).state.empty()) root["last_reset_reason"] = id(last_reset_reason).state;
+                  if (!std::isnan(id(loop_time).state)) root["loop_time"] = id(loop_time).state;
                   root["low_fuel_level"] = id(low_fuel_level).state;
                   root["low_oil_pressure"] = id(low_oil_pressure).state;
                   root["low_voltage_failure_1__ph-ph_"] = id(low_voltage_failure_1_ph_ph).state;

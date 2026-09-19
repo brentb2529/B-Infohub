@@ -1,0 +1,41 @@
+# ESP32 runtime health.
+#
+# WHY THIS EXISTS AT ALL
+#
+# This device ran out of heap once and aborted on boot -- operator new[] in an
+# API buffer -- and was only recovered because OTA rollback fired by itself.
+# Nine sensors were deleted to claw back 1,528 bytes, and every change since
+# has been argued about in terms of RAM. Through all of that the bridge
+# published NO heap telemetry whatsoever. The one number the project kept
+# making decisions about was the one number nobody could see.
+#
+# It is still at roughly 80% RAM, so this is deliberately three sensors and
+# not the whole `debug:` suite:
+#
+#   free heap        how much is left
+#   largest block    fragmentation. A big free total made of small fragments
+#                    still fails an allocation, which is exactly the shape of
+#                    the failure that bit us -- a contiguous buffer request.
+#   loop time        the early warning for a wedged component. The RS-485 loop
+#                    stalling shows up here before bus_age notices.
+#
+# CPU frequency and PSRAM are omitted: neither changes on this board, so they
+# would be constant series costing RAM to publish.
+
+debug:
+  update_interval: 60s
+
+sensor:
+  - platform: debug
+    free:
+      name: "Free Heap"
+      id: free_heap
+      entity_category: diagnostic
+    block:
+      name: "Largest Free Block"
+      id: heap_max_block
+      entity_category: diagnostic
+    loop_time:
+      name: "Loop Time"
+      id: loop_time
+      entity_category: diagnostic

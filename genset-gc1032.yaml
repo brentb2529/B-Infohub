@@ -93,6 +93,8 @@ packages:
   # Safe mode + OTA rollback. Must be present for enable_ota_rollback above to
   # take effect -- see the header in that file.
   resilience:  !include packages/resilience.yaml
+  # ESP32 heap / fragmentation / loop time. See that file for why only three.
+  esphealth:   !include packages/esp-health.yaml
   # RS-485 bus health. local-telemetry.yaml depends on the entities it defines.
   diagnostics: !include packages/diagnostics.yaml
   features:    !include packages/features.yaml

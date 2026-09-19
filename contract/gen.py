@@ -45,8 +45,27 @@ def resolved():
 cfg = resolved()
 ents = {}
 for dom in ("sensor", "binary_sensor", "text_sensor"):
+    entries = []
     for e in cfg.get(dom) or []:
-        if isinstance(e, dict) and e.get("id") and e.get("name"):
+        if not isinstance(e, dict):
+            continue
+        if e.get("id") and e.get("name"):
+            entries.append(e)
+            continue
+        # SOME PLATFORMS NEST THEIR ENTITIES ONE LEVEL DOWN.
+        #
+        # `debug:` is the one that matters here: its free / block / loop_time
+        # sensors are sub-keys of a SINGLE sensor entry whose top level has no
+        # id and no name. The old scan tested the outer dict, found neither,
+        # and dropped all three silently -- so heap telemetry could be added to
+        # the firmware, compiled in, and still never appear in the contract,
+        # with nothing anywhere saying why.
+        for value in e.values():
+            if isinstance(value, dict) and value.get("id") and value.get("name"):
+                entries.append(value)
+
+    for e in entries:
+        if True:
             # object_id is what the native API and MQTT actually expose, and it
             # is derived from the NAME, not from the C++ id. They usually match
             # because the ids were generated from the names -- but not always:
