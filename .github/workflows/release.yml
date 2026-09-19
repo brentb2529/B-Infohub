@@ -95,6 +95,14 @@ jobs:
           cat site/manifest.json
 
       - uses: actions/configure-pages@v5
+        with:
+          # A BRAND-NEW REPOSITORY HAS NO PAGES SITE, and this action fails
+          # with a bare "Not Found" rather than creating one. That is what
+          # broke the very first release: the firmware built and attached
+          # fine, then the whole job went red on the install page.
+          # `enablement: true` makes the workflow create the site on first
+          # run, so cloning this repo and cutting a release Just Works.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
