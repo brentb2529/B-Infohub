@@ -93,8 +93,20 @@ text_sensor:
     update_interval: 60s
     lambda: |-
       if (id(last_exercise_ts) == 0) return {};
-      ESPTime t = ESPTime::from_epoch_local(id(last_exercise_ts));
+      // UTC, AND SAID SO. This used to be from_epoch_local() formatted with no
+      // timezone suffix, which is the worst of both: the digits were the
+      // device's LOCAL wall time, and every consumer -- Home Assistant, the
+      // integration, the tile -- parsed a naive ISO string as UTC. A weekly
+      // exercise that really ran at 11:23 EDT was published as "11:23:50" and
+      // read back as 11:23 UTC, so it displayed as 07:23 EDT. Four hours out,
+      // silently, and it looked plausible enough to survive review.
+      //
+      // Caught only because the owner knew what time his generator actually
+      // runs and said so. The epoch itself was always right; it came from
+      // ha_time, not from the controller's own clock, so this is purely a
+      // formatting fault.
+      ESPTime t = ESPTime::from_epoch_utc(id(last_exercise_ts));
       char buf[32];   // 24 was exact-fit for a 4-digit year; the compiler was right to complain
-      snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d",
+      snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
       return {std::string(buf)};

@@ -132,6 +132,39 @@ sensor:
     update_interval: 60s
     lambda: 'return id(poll_miss);'
 
+  # CONTROLLER CLOCK SKEW.
+  #
+  # The controller runs its exercise schedule on ITS OWN clock, so a clock that
+  # has drifted means the weekly test fires at the wrong time of day -- which
+  # is invisible from Home Assistant, because everything HA timestamps uses
+  # ha_time and looks perfectly consistent with itself.
+  #
+  # Measured on this unit the day it was added: controller said 15:04 while the
+  # real local time was 16:38. An hour and a half slow, and nothing in the
+  # system said so.
+  #
+  # Positive means the controller is AHEAD of real time, negative means behind.
+  - platform: template
+    name: "Controller Clock Skew"
+    id: controller_clock_skew
+    unit_of_measurement: min
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: |-
+      if (isnan(id(clock_hours_raw).state) || isnan(id(date_year_raw).state)) return NAN;
+      auto now = id(ha_time).now();
+      if (!now.is_valid()) return NAN;
+      ESPTime local = ESPTime::from_epoch_local(now.timestamp);
+      const int ctrl_h = (int) (((uint16_t) id(clock_hours_raw).state) & 0x00FF);
+      const int ctrl_m = (int) ((((uint16_t) id(clock_minutes_raw).state) & 0xFF00) >> 8);
+      if (ctrl_h > 23 || ctrl_m > 59) return NAN;
+      int diff = (ctrl_h * 60 + ctrl_m) - (local.hour * 60 + local.minute);
+      // Wrap around midnight so 23:58 vs 00:02 reads as -4, not +1436.
+      if (diff > 720) diff -= 1440;
+      if (diff < -720) diff += 1440;
+      return (float) diff;
+
 binary_sensor:
   - platform: template
     name: "Bus Healthy"

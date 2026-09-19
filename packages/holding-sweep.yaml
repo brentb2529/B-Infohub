@@ -1,0 +1,144 @@
+# TEMPORARY: read-only FC03 sweep of the GC-1032's holding-register space.
+#
+# WHY THIS EXISTS
+#
+# The exercise schedule is set on the controller and exists nowhere else.
+# EnergyTrak's `next_exercise` is not schedule data -- it is the cloud
+# computing "last run + interval" -- and the InfoHub app does not display the
+# schedule at all. To show it in Home Assistant without a subscription, the
+# addresses have to be found on the bus. genmon documents only INPUT registers
+# (FC04); nothing documents this controller's HOLDING space, and settings are
+# exactly what holding registers are for.
+#
+# WHY THE FIRST VERSION FAILED, AND WHAT CHANGED
+#
+# v1 queued custom reads every 2s ALONGSIDE the normal poll loop, on the theory
+# that the gap was wide enough. It was not. On hardware the two interleaved
+# badly: responses arrived while the controller was mid-range-read, the parser
+# saw "Clearing buffer of 25 bytes - timeout after partial response", frames
+# were attributed to device 3 when this slave is 10, and within four minutes
+# Bus Status read `stale (225s)`. Telemetry was down, so the ALARM PIPELINE was
+# down. That is not a state to debug in; it was rolled back immediately.
+#
+# 25 bytes is the size of a normal RANGE read reply, not of a one-register FC03
+# reply. That is the whole diagnosis: our short reads and the poller's long
+# reads were in flight together and the responses were matched to the wrong
+# requests. Spacing could never fix it, because the problem was concurrency,
+# not cadence.
+#
+# So the sweep now takes the bus EXCLUSIVELY. stop_poller() halts new polling
+# ranges; the command queue still drains in loop(), so our reads proceed with
+# nothing else outstanding and every response length is deterministic.
+# start_poller() restores normal operation.
+#
+# SAFETY PROPERTIES
+#
+#   * OFF BY DEFAULT and never restored on. It runs only when someone turns the
+#     switch on deliberately. Nothing sweeps on boot, ever.
+#   * REFUSES TO RUN WHILE THE ENGINE IS TURNING. Telemetry matters most
+#     precisely when the machine is doing something.
+#   * SELF-LIMITING. 255 registers at 400ms is about 100 seconds, and a
+#     watchdog force-restores polling after 4 minutes whatever happens --
+#     including if the sweep wedges. Polling cannot be left off by a bug.
+#     That ceiling is deliberately under the 5-minute bridge-dark alert, so a
+#     sweep never pages anyone.
+#   * IT CANNOT WRITE. The only function code constructed is 0x03. There is no
+#     0x06 and no 0x10 in the executable part of this file. Reading a holding
+#     register is inert; it is the WRITE to holding 0x0000 that starts and
+#     stops the engine, and that byte is never built here. 0x0000 is not even
+#     read, purely to keep the control register untouched.
+#   * NO PER-REGISTER SENSORS. This device runs at 80.5% RAM and the last heap
+#     exhaustion aborted it on boot. One command is in flight at a time and
+#     results go to the log. v1 cost 88 bytes of RAM; this is the same shape.
+#
+# DELETE THIS PACKAGE once the addresses are known.
+
+globals:
+  - id: sweep_addr
+    type: uint16_t
+    restore_value: false
+    initial_value: '0x0001'
+  - id: sweep_hits
+    type: uint16_t
+    restore_value: false
+    initial_value: '0'
+  - id: sweep_active
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: sweep_started_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+script:
+  - id: sweep_finish
+    then:
+      - lambda: |-
+          if (!id(sweep_active)) return;
+          id(sweep_active) = false;
+          id(gc1032)->start_poller();
+          ESP_LOGI("sweep", "=== SWEEP ENDED at 0x%04X: %u registers responded. Polling resumed. ===",
+                   (unsigned) id(sweep_addr), (unsigned) id(sweep_hits));
+      - switch.turn_off: sweep_switch
+
+switch:
+  - platform: template
+    name: "Holding Register Sweep"
+    id: sweep_switch
+    icon: mdi:magnify-scan
+    entity_category: diagnostic
+    optimistic: true
+    restore_mode: ALWAYS_OFF
+    turn_on_action:
+      - lambda: |-
+          if (id(engine_running).state) {
+            ESP_LOGW("sweep", "REFUSED: engine is running. Telemetry stays live while the set is turning.");
+            return;
+          }
+          id(sweep_addr) = 0x0001;
+          id(sweep_hits) = 0;
+          id(sweep_started_ms) = millis();
+          id(sweep_active) = true;
+          id(gc1032)->stop_poller();
+          ESP_LOGI("sweep", "=== SWEEP START: FC03 0x0001-0x00FF, poller stopped, bus is ours ===");
+      - delay: 200ms
+      - lambda: |-
+          if (!id(sweep_active)) id(sweep_switch).publish_state(false);
+    turn_off_action:
+      - script.execute: sweep_finish
+
+interval:
+  # The sweep itself. 400ms is generous because nothing competes for the bus.
+  - interval: 400ms
+    then:
+      - lambda: |-
+          if (!id(sweep_active)) return;
+          const uint16_t addr = id(sweep_addr);
+          if (addr > 0x00FF) { id(sweep_finish).execute(); return; }
+          id(sweep_addr) = addr + 1;
+
+          std::vector<uint8_t> frame = {
+            0x03, (uint8_t)(addr >> 8), (uint8_t)(addr & 0xFF), 0x00, 0x01
+          };
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_custom_command(
+            id(gc1032), frame,
+            [addr](esphome::modbus_controller::EntityType, uint16_t,
+                   std::span<const uint8_t> data) {
+              if (data.size() >= 5 && data[1] == 0x03) {
+                uint16_t v = (uint16_t)(data[3] << 8) | data[4];
+                id(sweep_hits) = id(sweep_hits) + 1;
+                ESP_LOGI("sweep", "HOLD 0x%04X = %5u  0x%04X", (unsigned) addr, (unsigned) v, (unsigned) v);
+              }
+            });
+          id(gc1032)->queue_command(cmd);
+
+  # Watchdog. Polling is never left off because a sweep misbehaved.
+  - interval: 10s
+    then:
+      - lambda: |-
+          if (!id(sweep_active)) return;
+          if (millis() - id(sweep_started_ms) > 240000UL) {
+            ESP_LOGW("sweep", "WATCHDOG: sweep exceeded 4 minutes, forcing polling back on.");
+            id(sweep_finish).execute();
+          }

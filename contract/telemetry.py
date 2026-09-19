@@ -146,6 +146,22 @@ INCLUDE_DIAGNOSTICS = {
     # CONTROLLER is executing, not merely answering -- a hung controller can
     # keep its Modbus responder alive and serve stale registers forever.
     "controller_clock_age",
+    # How far the CONTROLLER's clock is from real time, in minutes. It runs
+    # its own exercise schedule against this clock, so drift moves the weekly
+    # test without anything else noticing: every timestamp Home Assistant
+    # produces uses HA's clock and stays perfectly self-consistent. Measured
+    # -94 minutes on the day it was added, which is why the weekly exercise
+    # was firing at 11:03 against a configured 09:30.
+    "controller_clock_skew",
+    # The controller's own wall clock, so the skew above can be read rather
+    # than merely trusted.
+    "controller_time",
+    # The undecoded status word, 0x004F. Every engine-state and switch-status
+    # bit this project decodes comes out of it, so when something arrives that
+    # the decode does not cover -- the yearly 45-minute burn-off is the known
+    # example, due 01 Apr 2027 and of unknown bit behaviour -- this is the one
+    # entity that makes it diagnosable after the fact instead of guesswork.
+    "status_register_raw",
     "wifi_rssi",
     "bridge_uptime",
     "esp_temp",

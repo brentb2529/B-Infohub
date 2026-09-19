@@ -103,7 +103,7 @@ interval:
                   root["has_malfunction"] = id(common_shutdown).state;
                   root["monitor_online"] = true;
                   
-                  // --- local-only superset: 104 keys the cloud never had ---
+                  // --- local-only superset: 107 keys the cloud never had ---
                   if (!std::isnan(id(alarm_reg_40).state)) root["alarm_register_1"] = id(alarm_reg_40).state;
                   if (!std::isnan(id(alarm_reg_41).state)) root["alarm_register_2"] = id(alarm_reg_41).state;
                   if (!std::isnan(id(alarm_reg_42).state)) root["alarm_register_3"] = id(alarm_reg_42).state;
@@ -135,6 +135,8 @@ interval:
                   if (!std::isnan(id(bridge_uptime).state)) root["uptime"] = id(bridge_uptime).state;
                   if (!std::isnan(id(bus_witness).state)) root["bus_witness"] = id(bus_witness).state;
                   if (!std::isnan(id(controller_clock_age).state)) root["controller_clock_age"] = id(controller_clock_age).state;
+                  if (!std::isnan(id(controller_clock_skew).state)) root["controller_clock_skew"] = id(controller_clock_skew).state;
+                  if (!id(controller_time).state.empty()) root["controller_time"] = id(controller_time).state;
                   if (!std::isnan(id(coolant_temperature).state)) root["coolant_temperature"] = id(coolant_temperature).state;
                   if (!std::isnan(id(cumulative_apparent_energy).state)) root["cumulative_apparent_energy"] = id(cumulative_apparent_energy).state;
                   if (!std::isnan(id(cumulative_energy).state)) root["cumulative_energy"] = id(cumulative_energy).state;
@@ -196,6 +198,7 @@ interval:
                   if (!std::isnan(id(percentage_load).state)) root["percentage_load"] = id(percentage_load).state;
                   if (!id(power_status).state.empty()) root["power_status"] = id(power_status).state;
                   root["scheduled_exercise_in_progress"] = id(scheduled_exercise).state;
+                  if (!id(status_register_raw).state.empty()) root["status_register_raw"] = id(status_register_raw).state;
                   root["temperature_circuit_open"] = id(temperature_circuit_open).state;
                   root["unbalanced_load"] = id(unbalanced_load).state;
                   if (!std::isnan(id(utility_l1_voltage).state)) root["utility_l1_voltage"] = id(utility_l1_voltage).state;
