@@ -51,6 +51,13 @@ SHARED = [
     ("battery_voltage",         "battery_voltage",        "num"),
     ("engine_speed",            "engine_speed",           "num"),
     ("engine_hours",            "engine_run_time",        "num"),
+    # LIFETIME COUNTERS, WHICH WERE NEVER CLOUD-ONLY.
+    # The firmware has read 0x003A/0x003B since the first bring-up, and the
+    # values agree with EnergyTrak exactly (bridge 286/2, cloud 286/2). They
+    # were simply absent from this list, so Home Assistant had no local source
+    # for them and fell back to the cloud for two numbers sitting on the bus.
+    ("starts_count",            "number_of_starts",       "num"),
+    ("trips_count",             "number_of_trips",        "num"),
     ("generator_frequency",     "generator_l1_frequency", "num"),
     ("grid_frequency",          "utility_l1_frequency",   "num"),
     # LINE-TO-LINE, not line-to-neutral. A shared key must be drop-in

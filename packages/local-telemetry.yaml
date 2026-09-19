@@ -68,6 +68,8 @@ interval:
                   if (!std::isnan(id(battery_voltage).state)) root["battery_voltage"] = id(battery_voltage).state;
                   if (!std::isnan(id(engine_speed).state)) root["engine_speed"] = id(engine_speed).state;
                   if (!std::isnan(id(engine_run_time).state)) root["engine_hours"] = id(engine_run_time).state;
+                  if (!std::isnan(id(number_of_starts).state)) root["starts_count"] = id(number_of_starts).state;
+                  if (!std::isnan(id(number_of_trips).state)) root["trips_count"] = id(number_of_trips).state;
                   if (!std::isnan(id(generator_l1_frequency).state)) root["generator_frequency"] = id(generator_l1_frequency).state;
                   if (!std::isnan(id(utility_l1_frequency).state)) root["grid_frequency"] = id(utility_l1_frequency).state;
                   if (!std::isnan(id(utility_l1_l2_voltage).state)) root["grid_voltage"] = id(utility_l1_l2_voltage).state;
