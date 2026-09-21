@@ -144,6 +144,7 @@ button:
   # this makes the decision yours.
   - platform: template
     name: "Confirm Firmware Good"
+    id: confirm_firmware_good
     icon: mdi:shield-check
     entity_category: diagnostic
     on_press:
@@ -159,6 +160,7 @@ button:
 
   - platform: template
     name: "Dump Event Log"
+    id: dump_event_log
     icon: mdi:text-box-search
     entity_category: diagnostic
     on_press:

@@ -85,6 +85,7 @@ script:
 button:
   - platform: template
     name: "Apply MQTT"
+    id: apply_mqtt
     icon: mdi:content-save-cog
     entity_category: config
     on_press:

@@ -203,6 +203,43 @@ INCLUDE_DIAGNOSTICS = {
     "backlog_pending",
 }
 
+# Settings Home Assistant may CHANGE on the bridge, by ESPHome id.
+#
+# Everything else in this contract is read-only, and that is the default this
+# list exists to protect. It is an allowlist rather than "every config entity"
+# because the bridge has settings that must never be one careless slider away
+# in a dashboard: the MQTT port and broker, the web login, anything that could
+# take the bridge off the network or near the RS-485 bus. The bridge is
+# read-only on the generator; nothing listed here may ever write to it.
+#
+# Add a control only if getting it wrong is recoverable from Home Assistant
+# itself. Wi-Fi, the web login and factory reset fail that test: one bad value
+# takes the bridge off the network that HA would need to put it back. Every
+# username and password fails it for another reason -- HA would hold them as
+# plain entity states, in the UI and in the recorder's history.
+CONTROLS = {
+    # ---- cosmetic ---------------------------------------------------------
+    "led_brightness",         # status-leds.yaml; floor of 5% by design
+
+    # ---- maintenance buttons ----------------------------------------------
+    "restart_bridge",         # monitoring goes dark for ~30 s, then returns
+    "reset_bus_counters",     # zeroes bus_reads_ok / bus_reads_missed
+    "confirm_firmware_good",  # ends OTA probation early; normally automatic
+    "dump_event_log",         # output goes to the ESPHome log, not HA
+
+    # ---- features ---------------------------------------------------------
+    "feat_passthrough",       # the InfoHub panel's feed; off = panel goes quiet
+
+    # ---- MQTT -------------------------------------------------------------
+    # Host and port only. Nothing here takes effect until Apply MQTT, and a
+    # wrong broker breaks the MQTT feed, not the native API HA itself uses.
+    # MQTT username and password are deliberately absent -- see above.
+    "feat_mqtt",
+    "cfg_mqtt_host",
+    "cfg_mqtt_port",
+    "apply_mqtt",
+}
+
 # Alarms, for active_alarm_count / active_alarms. Filled by gen.py from the
 # binary_sensor list minus the ones that are states rather than faults.
 NOT_A_FAULT = {

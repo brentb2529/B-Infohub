@@ -263,6 +263,7 @@ sensor:
 button:
   - platform: restart
     name: "Restart Bridge"
+    id: restart_bridge
     entity_category: diagnostic
 
   # The deliberate reconfiguration path, for while the bridge is still

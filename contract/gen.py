@@ -78,6 +78,28 @@ for dom in ("sensor", "binary_sensor", "text_sensor"):
                                  unit=e.get("unit_of_measurement"),
                                  diag=e.get("entity_category") == "diagnostic")
 
+# Writable settings. Only the ones named in T.CONTROLS -- see its comment for
+# why this is an allowlist and not "every config entity the bridge has".
+writable = {e["id"]: (dom, e) for dom in ("number", "switch", "text", "button")
+            for e in (cfg.get(dom) or [])
+            if isinstance(e, dict) and e.get("id") and e.get("name")}
+missing = sorted(T.CONTROLS - writable.keys())
+if missing: sys.exit("CONTROLS refers to ids that are not a number, switch, text or button:\n  "
+                     + "\n  ".join(missing))
+controls = {}
+for lid in sorted(T.CONTROLS):
+    dom, e = writable[lid]
+    o = sanitize(snake_case(e["name"]))
+    c = {"object_id": o, "esphome_id": lid, "name": e["name"], "kind": dom,
+         "category": e.get("entity_category") or None, "icon": e.get("icon") or None}
+    if dom == "number":
+        c.update(min=float(e["min_value"]), max=float(e["max_value"]), step=float(e["step"]),
+                 unit=e.get("unit_of_measurement"), mode=str(e.get("mode", "auto")).lower())
+    elif dom == "text":
+        c.update(min_length=int(e.get("min_length", 0)), max_length=int(e.get("max_length", 255)),
+                 mode=str(e.get("mode", "text")).lower())
+    controls[o] = c
+
 KIND = {"sensor": "num", "binary_sensor": "bin", "text_sensor": "txt"}
 shared_ids = {lid for _, lid, _ in T.SHARED}
 missing = [f"{k} -> {lid}" for k, lid, _ in T.SHARED if lid not in ents]
@@ -460,6 +482,8 @@ contract = {
                                          "name": m["name"], "kind": KIND[m["dom"]]}
                         for lid, m in sorted(local_only)},
     "alarm_keys": sorted(ents[i]["object_id"] for i, _ in alarms),
+    # Settings a consumer may WRITE, keyed by object_id. See T.CONTROLS.
+    "controls": controls,
     "snapshot_slots": [{"key": k, "scale": sc, "esphome_id": e}
                        for e, k, sc in T.SNAPSHOT_SLOTS],
     # How a consumer decides whether to trust any of the above. Both transports
@@ -478,6 +502,7 @@ contract = {
 (ROOT/"contract/telemetry.json").write_text(json.dumps(contract, indent=2) + "\n")
 
 print(f"shared keys      {len(T.SHARED)} mapped + {len(T.DERIVED)} derived")
+print(f"controls         {len(controls)} writable: {', '.join(sorted(controls)) or 'none'}")
 print(f"local-only keys  {len(local_only)}")
 print(f"alarms counted   {len(alarms)}")
 print(f"total published  {len(T.SHARED)+len(T.DERIVED)+len(local_only)}")
