@@ -56,6 +56,20 @@
 #
 # On boot all three sweep once. That proves the LEDs, the light pipes and the
 # GPIOs in one go -- worth having when the board is already sealed in a box.
+#
+# BRIGHTNESS
+#
+# The three GPIO LEDs are on LEDC (hardware PWM), capped by the "Status LED
+# Brightness" slider. It caps max_power, so every rule below -- set_state,
+# turn_on, the boot sweep, the reset-button identify -- dims with it and
+# none of them need to know. PWR and TX are wired without a GPIO and cannot
+# be dimmed here; that takes a bigger R5 / R9.
+#
+# The floor is 5%, not 0: "off" already means something on every one of these
+# LEDs, and a slider that could make them all dark would make them all lie.
+# Default is 100%, which is exactly the old on/off drive. The resistors were
+# sized so the LEDs read through light pipes in daylight -- judge a lower
+# setting through the lid, not on the bench.
 
 esphome:
   on_boot:
@@ -64,6 +78,9 @@ esphome:
     # chance you get to check them without opening it.
     - priority: -100
       then:
+        # Apply the restored brightness before the sweep, so the sweep shows
+        # the level the LEDs will actually run at.
+        - script.execute: apply_led_brightness
         - repeat:
             count: 2
             then:
@@ -78,15 +95,48 @@ esphome:
               - output.turn_off: led_fault
 
 output:
-  - platform: gpio
+  # max_power is stated explicitly because ESPHome only compiles in the
+  # scaling that set_max_power() needs when some output declares it. 100% is
+  # the pre-boot value; the slider takes over as soon as the script runs.
+  - platform: ledc
     pin: GPIO25
     id: led_wifi
-  - platform: gpio
+    max_power: 100%
+  - platform: ledc
     pin: GPIO26
     id: led_bus
-  - platform: gpio
+    max_power: 100%
+  - platform: ledc
     pin: GPIO27
     id: led_fault
+    max_power: 100%
+
+number:
+  - platform: template
+    name: "Status LED Brightness"
+    id: led_brightness
+    icon: mdi:brightness-6
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    optimistic: true
+    min_value: 5
+    max_value: 100
+    step: 5
+    initial_value: 100
+    restore_value: true
+    on_value:
+      - script.execute: apply_led_brightness
+
+script:
+  - id: apply_led_brightness
+    then:
+      - lambda: |-
+          const float p = id(led_brightness).state / 100.0f;
+          if (std::isnan(p)) return;
+          id(led_wifi).set_max_power(p);
+          id(led_bus).set_max_power(p);
+          id(led_fault).set_max_power(p);
 
 interval:
   # 250 ms so a 2 Hz blink is expressible. Polled from one place rather than
