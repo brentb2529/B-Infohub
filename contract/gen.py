@@ -76,7 +76,19 @@ for dom in ("sensor", "binary_sensor", "text_sensor"):
                                  off=bool(e.get("disabled_by_default")),
                                  object_id=sanitize(snake_case(e["name"])),
                                  unit=e.get("unit_of_measurement"),
-                                 diag=e.get("entity_category") == "diagnostic")
+                                 diag=e.get("entity_category") == "diagnostic",
+                                 # `internal: true` is published by the MQTT
+                                 # snapshot (a lambda can read any sensor) but
+                                 # NOT by the native API, which carries only
+                                 # real entities. The 16 raw alarm registers
+                                 # are internal, so they reach Grafana and
+                                 # never reach ha-energytrak -- which had
+                                 # generated entity descriptions for all of
+                                 # them. Recorded per key rather than dropped:
+                                 # deleting them from the contract would have
+                                 # removed them from MQTT too, which is the one
+                                 # place the raw block IS visible.
+                                 api=not e.get("internal"))
 
 # Writable settings. Only the ones named in T.CONTROLS -- see its comment for
 # why this is an allowlist and not "every config entity the bridge has".
@@ -479,7 +491,8 @@ contract = {
     # a reader can trace a key back to the YAML that produced it.
     "local_only_keys": {m["object_id"]: {"object_id": m["object_id"],
                                          "esphome_id": lid, "unit": m["unit"],
-                                         "name": m["name"], "kind": KIND[m["dom"]]}
+                                         "name": m["name"], "kind": KIND[m["dom"]],
+                                         "api": m["api"]}
                         for lid, m in sorted(local_only)},
     "alarm_keys": sorted(ents[i]["object_id"] for i, _ in alarms),
     # Settings a consumer may WRITE, keyed by object_id. See T.CONTROLS.

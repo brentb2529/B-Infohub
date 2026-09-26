@@ -103,7 +103,10 @@ interval:
                   root["has_malfunction"] = id(common_shutdown).state;
                   root["monitor_online"] = true;
                   
-                  // --- local-only superset: 118 keys the cloud never had ---
+                  // --- local-only superset: 121 keys the cloud never had ---
+                  if (!id(alarm_block).state.empty()) root["alarm_block"] = id(alarm_block).state;
+                  if (!std::isnan(id(alarm_block_changes).state)) root["alarm_block_changes"] = id(alarm_block_changes).state;
+                  root["alarm_block_unexpected_value"] = id(alarm_block_unexpected).state;
                   if (!std::isnan(id(alarm_reg_40).state)) root["alarm_register_1"] = id(alarm_reg_40).state;
                   if (!std::isnan(id(alarm_reg_41).state)) root["alarm_register_2"] = id(alarm_reg_41).state;
                   if (!std::isnan(id(alarm_reg_42).state)) root["alarm_register_3"] = id(alarm_reg_42).state;

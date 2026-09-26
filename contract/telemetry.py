@@ -194,6 +194,15 @@ INCLUDE_DIAGNOSTICS = {
     "boot_partition",
     "last_reset_reason",
 
+    # ---- The alarm block we cannot decode --------------------------------
+    # packages/alarm-watch.yaml. The raw block, a count of how many times it
+    # has changed, and whether a nibble value we have never seen has appeared.
+    # Diagnostic by category, but this is the only honest visibility we have
+    # into alarms on this controller -- see that file's header.
+    "alarm_block",
+    "alarm_block_changes",
+    "alarm_block_unexpected",
+
     # ---- Flash event log ------------------------------------------------
     # The backlog that replayed forever and paged every 30 seconds. Its
     # counters were only ever readable over the ESPHome API, so the storm was

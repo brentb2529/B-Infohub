@@ -1,0 +1,136 @@
+# Watch the alarm block for ANY change, because we do not understand its encoding.
+#
+# WHAT WE ACTUALLY KNOW, AND WHAT WE ONLY BELIEVE
+#
+# Every alarm this firmware decodes is a nibble test against 0x0040-0x004F, on
+# one documented rule: asserted when (raw & mask) == value, with the nibbles
+# ACTIVE LOW, so a nibble of zero means the fault is present. That rule comes
+# from genmon's controller definition -- third-party documentation for this
+# family. It has never been confirmed on this hardware.
+#
+# Three observations argue against taking it at face value:
+#
+#   1. 0x0040-0x004D DO NOT MOVE. Across all 368 samples of
+#      captures/run-2026-08-31.csv -- a full manual start, run and stop -- every
+#      one of those registers is bit-for-bit identical. Only 0x004E and 0x004F
+#      change. Static is what CONFIGURATION looks like, not live alarm state.
+#
+#   2. The controller's own manual gives every alarm a configurable ACTION:
+#      None / Notification / Warning / Electrical Trip / Shutdown. If these
+#      nibbles were those action codes we would expect to see 2, 3 or 4
+#      somewhere -- low oil pressure ought to be a Shutdown. In 0x0040-0x004D
+#      the only nibble values that ever appear are 0, 1, 0xE and 0xF.
+#
+#   3. The manual reports a MISSING SENSOR as its own alarm ("Anlg LOP Ckt
+#      Open -- the oil pressure sensor is detected as not being present"), which
+#      undercuts our inference that a zero nibble means an unpopulated input.
+#      That inference was invented to explain why 15 conditions read faulted on
+#      a demonstrably healthy generator.
+#
+# So the encoding is UNKNOWN. No real alarm has ever been observed on this
+# machine, in the registers or anywhere else, which means the critical alarm
+# path may never fire and nothing would tell us.
+#
+# WHAT THIS FILE DOES ABOUT IT
+#
+# It does not try to decode anything. It publishes the raw block and shouts if
+# it changes. Whatever the nibbles mean, a controller that raises an alarm is
+# very unlikely to leave all fourteen registers untouched -- and if it does,
+# that is itself the answer, established by a test rather than assumed.
+#
+# The alert this feeds is honest about its own ignorance: "the alarm block
+# changed; read the display". That converts an unknown into a notification,
+# which is the opposite of the current state, where an unknown is silence.
+#
+# WHY A DIGEST AND NOT SIXTEEN SENSORS
+#
+# The 16 registers are polled as `internal: true` sensors, so nothing publishes
+# them today. Exposing each one costs RAM on a device already near 81%, where
+# heap exhaustion has already caused an aborted boot and an automatic rollback.
+# One string carries all fourteen, in full, at a fraction of the cost -- and a
+# reader who wants a single register can slice it by position.
+
+text_sensor:
+  # All of 0x0040-0x004D as one hex string, MSB first, in register order:
+  # "1100 1111 FF11 ..." without the spaces. Everything the controller tells us
+  # about alarms, shown rather than interpreted.
+  - platform: template
+    name: "Alarm Block"
+    id: alarm_block
+    icon: mdi:barcode
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      static const int n = 14;
+      sensor::Sensor *regs[n] = {
+        id(alarm_reg_40), id(alarm_reg_41), id(alarm_reg_42), id(alarm_reg_43),
+        id(alarm_reg_44), id(alarm_reg_45), id(alarm_reg_46), id(alarm_reg_47),
+        id(alarm_reg_48), id(alarm_reg_49), id(alarm_reg_4a), id(alarm_reg_4b),
+        id(alarm_reg_4c), id(alarm_reg_4d),
+      };
+      char out[n * 4 + 1];
+      for (int i = 0; i < n; i++) {
+        // A register we have never read must not masquerade as 0x0000: that is
+        // a real value in this block and reading it as one would be the same
+        // mistake the BUS LED used to make.
+        if (std::isnan(regs[i]->state)) return std::string("incomplete");
+        snprintf(out + i * 4, 5, "%04X", (uint16_t) regs[i]->state);
+      }
+      return std::string(out, n * 4);
+
+binary_sensor:
+  # A nibble value we have never seen before. The alphabet below is everything
+  # observed in 0x0040-0x004D on this controller: on the 2026-08-31 baseline,
+  # across a full run, and every poll since. A fifth value appearing is
+  # information -- quite possibly the alarm state we have been unable to find.
+  - platform: template
+    name: "Alarm Block Unexpected Value"
+    id: alarm_block_unexpected
+    device_class: problem
+    entity_category: diagnostic
+    lambda: |-
+      static const int n = 14;
+      sensor::Sensor *regs[n] = {
+        id(alarm_reg_40), id(alarm_reg_41), id(alarm_reg_42), id(alarm_reg_43),
+        id(alarm_reg_44), id(alarm_reg_45), id(alarm_reg_46), id(alarm_reg_47),
+        id(alarm_reg_48), id(alarm_reg_49), id(alarm_reg_4a), id(alarm_reg_4b),
+        id(alarm_reg_4c), id(alarm_reg_4d),
+      };
+      for (int i = 0; i < n; i++) {
+        if (std::isnan(regs[i]->state)) return {};
+        uint16_t v = (uint16_t) regs[i]->state;
+        for (int s = 12; s >= 0; s -= 4) {
+          uint8_t nib = (v >> s) & 0xF;
+          if (nib != 0x0 && nib != 0x1 && nib != 0xE && nib != 0xF) return true;
+        }
+      }
+      return false;
+
+sensor:
+  # How many times the block has changed since boot. Zero is the expected
+  # reading and the whole point: it is the number that has quietly been zero
+  # for the life of this generator, and the first time it is not, something
+  # happened that we should go and look at.
+  - platform: template
+    name: "Alarm Block Changes"
+    id: alarm_block_changes
+    icon: mdi:counter
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      static std::string last;
+      static uint32_t count = 0;
+      const std::string now = id(alarm_block).state;
+      // "incomplete" is not a state to compare against -- it means a register
+      // has not arrived yet, which is not a change in the controller.
+      if (now.empty() || now == "incomplete") return (float) count;
+      if (last.empty()) {
+        last = now;                     // first complete read establishes the reference
+      } else if (now != last) {
+        last = now;
+        count++;
+        ESP_LOGW("alarm_watch", "ALARM BLOCK CHANGED to %s -- encoding is not "
+                                "understood; check the controller display", now.c_str());
+      }
+      return (float) count;

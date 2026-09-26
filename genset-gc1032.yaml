@@ -135,6 +135,10 @@ packages:
   alarms:  !include packages/gc1032-alarms.yaml
   # Every remaining address the controller answers, raw and disabled by default.
   unmapped: !include packages/gc1032-unmapped.yaml
+  # Watches the alarm block for any change, because its encoding is not
+  # understood and silence is the failure mode that matters. See its header.
+  alarmwatch: !include packages/alarm-watch.yaml
+
   # On-board status LEDs (PCB rev 1.0). Harmless on a breadboard build:
   # the GPIOs simply drive nothing.
   leds:     !include packages/status-leds.yaml
