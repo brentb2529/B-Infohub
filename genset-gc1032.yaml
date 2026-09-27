@@ -138,6 +138,8 @@ packages:
   # Watches the alarm block for any change, because its encoding is not
   # understood and silence is the failure mode that matters. See its header.
   alarmwatch: !include packages/alarm-watch.yaml
+  # Port B counters: is the InfoHub polling us. Must load with passthrough.
+  pthealth:  !include packages/passthrough-health.yaml
 
   # On-board status LEDs (PCB rev 1.0). Harmless on a breadboard build:
   # the GPIOs simply drive nothing.

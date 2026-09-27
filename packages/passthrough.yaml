@@ -68,6 +68,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Protocol Revision
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(protocol_revision).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -76,6 +77,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L1 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l1_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -84,6 +86,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L2 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l2_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -92,6 +95,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L3 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l3_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -100,6 +104,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L1-L2 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l1_l2_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -108,6 +113,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L2-L3 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l2_l3_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -116,6 +122,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L3-L1 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l3_l1_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -124,6 +131,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L1 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l1_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -132,6 +140,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L2 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l2_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -140,6 +149,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L3 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l3_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -148,6 +158,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L1 Power Factor
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l1_power_factor).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -156,6 +167,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L2 Power Factor
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l2_power_factor).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -164,6 +176,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L3 Power Factor
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l3_power_factor).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -172,6 +185,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Average Power Factor
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(average_power_factor).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -180,6 +194,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L1 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l1_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -188,6 +203,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L2 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l2_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -196,6 +212,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L3 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l3_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -204,6 +221,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L1-L2 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l1_l2_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -212,6 +230,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L2-L3 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l2_l3_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -220,6 +239,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L3-L1 Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l3_l1_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -228,6 +248,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L1 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l1_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -236,6 +257,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L2 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l2_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -244,6 +266,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Utility L3 Frequency
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(utility_l3_frequency).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -252,6 +275,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L1 Current
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l1_current).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -260,6 +284,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L2 Current
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l2_current).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -268,6 +293,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Generator L3 Current
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(generator_l3_current).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -276,6 +302,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L1 Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l1_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -284,6 +311,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L2 Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l2_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -292,6 +320,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L3 Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l3_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -300,6 +329,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Total Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(total_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -308,6 +338,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Percentage Load
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(percentage_load).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -316,6 +347,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L1 Apparent Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l1_apparent_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -324,6 +356,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L2 Apparent Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l2_apparent_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -332,6 +365,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L3 Apparent Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l3_apparent_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -340,6 +374,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Total Apparent Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(total_apparent_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -348,6 +383,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L1 Reactive Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l1_reactive_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -356,6 +392,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L2 Reactive Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l2_reactive_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -364,6 +401,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // L3 Reactive Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(l3_reactive_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -372,6 +410,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Total Reactive Power
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(total_reactive_power).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -380,24 +419,28 @@ modbus_server:
         value_type: U_DWORD
         read_lambda: |-
           // Cumulative Energy -- exact 32-bit capture
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           return (uint32_t) id(raw_dword_0027);
       - address: 0x0029
         value_type: U_DWORD
         read_lambda: |-
           // Cumulative Apparent Energy -- exact 32-bit capture
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           return (uint32_t) id(raw_dword_0029);
       - address: 0x002B
         value_type: U_DWORD
         read_lambda: |-
           // Cumulative Reactive Energy -- exact 32-bit capture
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           return (uint32_t) id(raw_dword_002b);
       - address: 0x0033
         value_type: U_WORD
         read_lambda: |-
           // Oil Pressure
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(oil_pressure_bar).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -406,6 +449,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Coolant Temperature
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(coolant_temperature).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -414,6 +458,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Fuel Level
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(fuel_level).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -422,6 +467,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Fuel Volume
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(fuel_volume).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -430,6 +476,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Battery Voltage
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(battery_voltage).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -438,6 +485,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Engine Speed
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(engine_speed).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -446,6 +494,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Number of Starts
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(number_of_starts).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -454,6 +503,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Number of Trips
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(number_of_trips).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -462,6 +512,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Engine Run Time Hours
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(run_time_hours).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -470,6 +521,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Engine Run Time Minutes
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(run_time_minutes).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -478,6 +530,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 1
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_40).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -486,6 +539,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 2
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_41).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -494,6 +548,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 3
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_42).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -502,6 +557,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 4
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_43).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -510,6 +566,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 5
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_44).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -518,6 +575,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 6
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_45).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -526,6 +584,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 7
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_46).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -534,6 +593,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 8
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_47).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -542,6 +602,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 9
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_48).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -550,6 +611,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 10
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_49).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -558,6 +620,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 11
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4a).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -566,6 +629,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 12
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4b).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -574,6 +638,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 13
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4c).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -582,6 +647,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 14
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4d).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -590,6 +656,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Alarm Register 15
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4e).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -598,6 +665,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Status Register
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(alarm_reg_4f).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -606,6 +674,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Controller Clock Minutes Raw
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(clock_minutes_raw).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -614,6 +683,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Controller Clock Hours Raw
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(clock_hours_raw).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -622,6 +692,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Controller Date MonthDay Raw
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(date_monthday_raw).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -630,6 +701,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Controller Year Raw
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(date_year_raw).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -638,6 +710,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Nominal kW
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(nominal_kw).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -646,6 +719,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Controller Firmware
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(controller_firmware).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;
@@ -654,6 +728,7 @@ modbus_server:
         value_type: U_WORD
         read_lambda: |-
           // Unknown Register 0x0056
+          id(ih_last_ms) = millis(); id(ih_regs)++;
           if (!id(feat_passthrough).state) return {};
           float v = id(unknown_register_0x0056).state;
           if (std::isnan(v)) return (uint16_t) 0xFFFF;

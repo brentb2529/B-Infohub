@@ -1,0 +1,63 @@
+# Port B health: is the InfoHub actually polling us, and are we answering?
+#
+# The passthrough proxy (packages/passthrough.yaml) had no telemetry at all.
+# When the InfoHub's cloud feed stopped on 2026-09-26 the question "is the
+# bridge still forwarding to the InfoHub?" could only be answered by capturing
+# the log and reasoning about the byte sizes of echoed frames. That took most
+# of a day and was still an inference. Two counters make it a fact.
+#
+# Both globals are written from every register read lambda the proxy serves
+# (contract/gen.py injects the line), so they cost nothing to maintain and are
+# exact: one increment per register in every request the modbus server parses.
+#
+# Deliberately NOT a request counter. ESPHome's modbus server offers no hook
+# per request, only per register; registers-per-request is whatever the
+# InfoHub chooses to ask for (28-30 on this unit), so the count climbs in
+# steps. What matters is that it climbs, and how long ago it last did.
+
+globals:
+  - id: ih_last_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: ih_regs
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+sensor:
+  - platform: template
+    name: "InfoHub Registers Served"
+    id: infohub_regs_served
+    icon: mdi:counter
+    accuracy_decimals: 0
+    state_class: total_increasing
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: 'return (float) id(ih_regs);'
+
+  - platform: template
+    name: "InfoHub Request Age"
+    id: infohub_request_age
+    icon: mdi:timer-sand
+    unit_of_measurement: s
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      // NaN until the first request ever arrives: "never" must not read as 0 s.
+      if (id(ih_last_ms) == 0) return NAN;
+      return (float) ((millis() - id(ih_last_ms)) / 1000);
+
+binary_sensor:
+  # The InfoHub polls every second or so. Thirty seconds of nothing means it
+  # has stopped asking -- unplugged, powered down, or its own fault -- which is
+  # a different problem from anything on this board, and now says so.
+  - platform: template
+    name: "InfoHub Polling"
+    id: infohub_polling
+    device_class: connectivity
+    entity_category: diagnostic
+    lambda: |-
+      if (id(ih_last_ms) == 0) return {};
+      return (millis() - id(ih_last_ms)) < 30000;

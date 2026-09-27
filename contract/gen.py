@@ -223,6 +223,13 @@ def scale_of(e):
 
 WORDS = {"U_DWORD": ("uint32_t", "llroundf", "0xFFFFFFFF"),
          "S_DWORD": ("int32_t", "llroundf", "0")}
+# Every served register touches two globals from packages/passthrough-health.yaml:
+# the time of the last request and a running count. That is the only telemetry
+# port B has. On 2026-09-26 the InfoHub's cloud feed went silent for a day and
+# the ONLY evidence that the proxy was still answering was the size of echoed
+# frames in a log capture -- 20 hours of inference for a fact two counters
+# would have stated. Counted BEFORE the passthrough check, so a polling InfoHub
+# is visible even while the feature is off.
 regs = []
 for e in mb:
     vt = e.get("value_type", "U_WORD")
@@ -233,10 +240,12 @@ for e in mb:
         # 32-bit counters cannot survive a float32 state -- served from the
         # exact word captured in gc1032-power.yaml instead.
         body = (f"          // {e.get('name', e['id'])} -- exact 32-bit capture\n"
+                f"          id(ih_last_ms) = millis(); id(ih_regs)++;\n"
                 f"          if (!id(feat_passthrough).state) return {{}};\n"
                 f"          return ({ctype}) id(raw_dword_{e['address']:04x});")
     else:
         body = (f"          // {e.get('name', e['id'])}\n"
+                f"          id(ih_last_ms) = millis(); id(ih_regs)++;\n"
                 f"          if (!id(feat_passthrough).state) return {{}};\n"
                 f"          float v = id({e['id']}).state;\n"
                 f"          if (std::isnan(v)) return ({ctype}) {sentinel};\n"

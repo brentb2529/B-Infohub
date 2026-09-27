@@ -203,6 +203,13 @@ INCLUDE_DIAGNOSTICS = {
     "alarm_block_changes",
     "alarm_block_unexpected",
 
+    # ---- Port B / InfoHub ------------------------------------------------
+    # packages/passthrough-health.yaml. Whether the InfoHub is polling us and
+    # how much we have served it. Absent on 2026-09-26, when it mattered.
+    "infohub_regs_served",
+    "infohub_request_age",
+    "infohub_polling",
+
     # ---- Flash event log ------------------------------------------------
     # The backlog that replayed forever and paged every 30 seconds. Its
     # counters were only ever readable over the ESPHome API, so the storm was

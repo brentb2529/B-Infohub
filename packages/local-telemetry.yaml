@@ -103,7 +103,7 @@ interval:
                   root["has_malfunction"] = id(common_shutdown).state;
                   root["monitor_online"] = true;
                   
-                  // --- local-only superset: 121 keys the cloud never had ---
+                  // --- local-only superset: 124 keys the cloud never had ---
                   if (!id(alarm_block).state.empty()) root["alarm_block"] = id(alarm_block).state;
                   if (!std::isnan(id(alarm_block_changes).state)) root["alarm_block_changes"] = id(alarm_block_changes).state;
                   root["alarm_block_unexpected_value"] = id(alarm_block_unexpected).state;
@@ -194,6 +194,9 @@ interval:
                   root["high_voltage_warning_1__ph-ph_"] = id(high_voltage_warning_1_ph_ph).state;
                   root["high_voltage_warning_2__ph-ph_"] = id(high_voltage_warning_2_ph_ph).state;
                   root["high_voltage_warning__ph-ph_"] = id(high_voltage_warning_ph_ph).state;
+                  root["infohub_polling"] = id(infohub_polling).state;
+                  if (!std::isnan(id(infohub_regs_served).state)) root["infohub_registers_served"] = id(infohub_regs_served).state;
+                  if (!std::isnan(id(infohub_request_age).state)) root["infohub_request_age"] = id(infohub_request_age).state;
                   if (!std::isnan(id(l3_apparent_power).state)) root["l3_apparent_power"] = id(l3_apparent_power).state;
                   if (!std::isnan(id(l3_power).state)) root["l3_power"] = id(l3_power).state;
                   if (!std::isnan(id(l3_power_factor).state)) root["l3_power_factor"] = id(l3_power_factor).state;

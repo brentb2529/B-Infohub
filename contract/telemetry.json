@@ -870,6 +870,30 @@
       "kind": "bin",
       "api": true
     },
+    "infohub_polling": {
+      "object_id": "infohub_polling",
+      "esphome_id": "infohub_polling",
+      "unit": null,
+      "name": "InfoHub Polling",
+      "kind": "bin",
+      "api": true
+    },
+    "infohub_registers_served": {
+      "object_id": "infohub_registers_served",
+      "esphome_id": "infohub_regs_served",
+      "unit": null,
+      "name": "InfoHub Registers Served",
+      "kind": "num",
+      "api": true
+    },
+    "infohub_request_age": {
+      "object_id": "infohub_request_age",
+      "esphome_id": "infohub_request_age",
+      "unit": "s",
+      "name": "InfoHub Request Age",
+      "kind": "num",
+      "api": true
+    },
     "l3_apparent_power": {
       "object_id": "l3_apparent_power",
       "esphome_id": "l3_apparent_power",
