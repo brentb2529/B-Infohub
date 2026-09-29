@@ -3,6 +3,12 @@
 90 × 92 mm, 2-layer, 1.6 mm FR4. KiCad 10 project generated programmatically from
 `tools/circuit.py` and verified with `kicad-cli` 10.0.5.
 
+> **Rev 1.1 is pending in `tools/circuit.py` only** (R10/R11 fail-safe bias on the
+> InfoHub pair — see *Why the termination jumpers are open*). The KiCad files,
+> gerbers, BOM and the checks below are still rev 1.0. Before the next fab run:
+> regenerate the schematic and PCB, route the two new pads (`routes.pkl` is rev
+> 1.0), re-run ERC/DRC, and update this table.
+
 Replaces the Briggs & Stratton InfoHub as the Modbus master on the GC-1032's RS-485
 bus, **while passing the InfoHub through on a second port** so its cell modem keeps
 working as out-of-band backup during an outage.
@@ -67,8 +73,21 @@ So: leave both jumpers open. Fit one only if CRC errors appear on that segment. 
 exist so the option is available, not because it is needed.
 
 If a bus ever does misbehave at idle rather than in traffic, the fix is fail-safe
-biasing (pull-up on A, pull-down on B), not termination. There are no bias footprints
-on this revision — say the word and I will add them as DNP.
+biasing (pull-up on A, pull-down on B), not termination.
+
+**Rev 1.0 has no bias footprints, and port B does misbehave at idle.** A raw-frame
+capture on 2026-09-28 showed ~61 bytes of garbage arriving on the InfoHub pair 35–57 ms
+after every reply the bridge sends — the pair floating inside the receiver's ±200 mV
+dead band once our driver releases it. ESPHome's Modbus server reads that as an
+incoming request, holds its next reply, and drops it: 8 of 36 replies to the InfoHub
+in 75 s, with the InfoHub retrying after 0.8 s each time. It tolerates this (it kept
+the vendor cloud fed for a week on it), but the bus is dirtier than it should be. Port
+A is unaffected because the GC-1032 biases its own bus.
+
+**Rev 1.1 adds R10/R11** (4.7 kΩ pull-up on A to 3.3 V, pull-down on B to GND, next
+to U4), fitted by default. Rev 1.0 boards are left as they are by decision; the
+firmware can be made tolerant of the noise (flush the port-B receive buffer after
+transmitting) if a fielded board ever needs it.
 
 ## Bus parameters — measured, not assumed
 

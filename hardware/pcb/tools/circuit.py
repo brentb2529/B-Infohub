@@ -11,6 +11,12 @@ caught real bugs.
 
 Bus parameters were measured on the real controller 2026-08-31: slave 10,
 9600 8E1. See ../../docs/field-findings-2026-08-31.md.
+
+REV 1.1 (pending -- source only, not yet regenerated or routed):
+  * R10/R11 fail-safe bias on the InfoHub pair (port B). See the port-B
+    section for the evidence. Before fab: regenerate schematic and PCB, route
+    the two new pads (routes.pkl is rev 1.0 and does not cover them), re-run
+    ERC/DRC, and bump the README. The shipped gerbers remain rev 1.0.
 """
 import uuid
 PROJECT="binfohub_bridge"
@@ -147,6 +153,29 @@ part("D4","TVS3","SOT","SM712",{1:"IH_A",2:"IH_B",3:"GND"},(70.0,20.5,0),lcsc="C
 part("R4","R","R","120R",{1:"IH_A",2:"TERM_B"},(78.5,20.5,0),lcsc="C22787",desc="bus termination, InfoHub side")
 part("JP2","J2","PH2","TERM 120R",{1:"TERM_B",2:"IH_B"},(82.5,20.5,0),lcsc="C492401",
      desc="120R termination jumper, InfoHub side. LEAVE OPEN by default -- same reasoning as JP1.",hand=True)
+
+# ---- rev 1.1: fail-safe bias on the InfoHub pair ---------------------------
+# Port B is a bus WE create, with two devices and nothing holding it at a known
+# level between frames. The SP3485 only guarantees a defined receiver output
+# for OPEN inputs; an idle, connected pair is not open, so when our driver
+# releases the line A-B floats inside the +/-200 mV dead band and the receiver
+# flickers on noise. Measured 2026-09-28 with raw frame logging: 35-57 ms
+# after every 175-byte reply, ~61 bytes of garbage (0xFA.., 0xFF..) arrive on
+# port B; ESPHome's server treats them as an incoming request, defers its next
+# reply and then drops it -- 8 of 36 replies to the InfoHub in 75 s, and the
+# InfoHub re-asking after 0.8 s each time. Port A never shows this: the
+# GC-1032 biases its own bus.
+#
+# A pull-up on A and a pull-down on B hold the idle pair at a definite "1".
+# With JP2 OPEN (the default, and correct for a cable of a metre or two) the
+# only load is the two receivers' ~12k inputs, so 4k7 gives ~1.3 V idle
+# differential -- six times the dead band. IF TERMINATION IS EVER FITTED the
+# 120R dominates and these must drop to 560R-680R to stay above 200 mV; the
+# 4k7 pair is then too weak. Fitted by default: this is a fix, not an option.
+part("R10","R","R","4k7",{1:"+3V3",2:"IH_A"},(66.0,25.0,90),lcsc="C23162",
+     desc="Fail-safe bias, InfoHub pair: pull-up on A. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1.")
+part("R11","R","R","4k7",{1:"IH_B",2:"GND"},(66.0,29.0,90),lcsc="C23162",
+     desc="Fail-safe bias, InfoHub pair: pull-down on B. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1.")
 
 # ===== status LEDs =====
 # Answers 'what is this box doing?' without a laptop. PWR and TX need no GPIO.
