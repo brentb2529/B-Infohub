@@ -165,3 +165,68 @@ is missing.
 There is one generator and one controller. Everything about other families is
 inference until a stranger's board reports a profile. That is an argument for
 shipping the profile early, not for waiting.
+
+## Status — 2026-09-29: commissioning is implemented and verified
+
+`packages/commissioning.yaml` runs once, by itself, the first time the bus is
+healthy with the engine stopped and no profile is stored, and again on the
+**Run Discovery** button. Verified on the real GC-1032: family `gc103x`,
+protocol `0x8003`, firmware `0x4113`, model register absent, **87 registers
+present** (the same 87 the August laptop sweep found), alt block absent, alarm
+inventory 8 absent / 30 ok / 17 indeterminate / 1 unexpected; identical on a
+second run and after a reboot; bus impact 1 missed poll. ha-energytrak
+≥ 1.26.1 reads it (device model, Controller Family, Registers Present, Alarm
+Inputs Indeterminate, Commissioned) and applies the four-state alarm rule.
+
+### What the wire taught, and the code now assumes
+
+- An ESPHome custom command's frame **includes the slave address**; the
+  callback receives **register bytes only**; the hub **de-duplicates
+  byte-identical frames** (the heartbeat reads two registers so it cannot be
+  absorbed into the poller's own read of 0x0000); `send_wait_time` is 2000 ms
+  by default and is set to 500 ms for the probe's duration; misses are pooled
+  per controller and past `max_cmd_retries` the controller is marked offline
+  and its queue cleared — so the probe runs with retries at zero, one command
+  in flight, and a heartbeat after every miss. `stop_poller()` stops new
+  cycles; the one already queued drains for ~12 s first.
+- Only what the poller does not read is probed. The poller's own ranges are
+  proven present by their sensors having values, except 0x0033–0x0036, whose
+  senders are absent here (all 0xFFFF → NaN) and which is probed directly.
+- On this controller an absent register answers **illegal data address in
+  12 ms**, so "did not answer" never arose; the design still tolerates it.
+- **Home Assistant caps a sensor state at 255 characters.** The profile is
+  one string; v1 was ~330 and read `unknown`. v2 is ~237.
+- **RAM:** the five-entity first cut aborted on boot (API overflow buffer
+  allocation with two clients connecting). Two entities now; +0.6 % RAM.
+
+### Profile v2 (the `Controller Profile` text sensor)
+
+```json
+{"v":2,"fam":"gc103x","proto":"8003","fw":"4113","model":"FFFF","n":87,
+ "map":"FFFFFFFFFFFFFFFF007FFFFF00000000","alt":"00000000",
+ "base":"11001111FF111111F0F0111F010000111001111100000F011F1111FE",
+ "prov":1,"batt":1,"util":1,"t":1790737519}
+```
+
+| Key | Meaning |
+|---|---|
+| `fam` | `gc103x` when `proto` is 0x8003 and 0x0040–0x004F are present; otherwise `unknown` |
+| `proto` / `fw` / `model` | registers 0x0000 / 0x0055 / 0x00B5 as hex words; `FFFF` = did not answer |
+| `n` | registers present |
+| `map` | presence bitmap for 0x0000–0x007F, four 32-bit words, MSB first |
+| `alt` | presence bitmap for 0x00B4–0x00D3 |
+| `base` | 0x0040–0x004D as read at commissioning, four hex digits each |
+| `prov` | baseline provisional (no clean run confirmed it yet) |
+| `batt` / `util` | battery 8–16 V; utility 0 or 90–140 V per leg |
+| `t` | Unix time of capture, 0 if the clock was not valid |
+
+The contract carries `alarm_bits` (register, mask, asserted value per alarm)
+so a consumer can apply the four-state rule against `base` without the
+device decoding anything.
+
+### Not yet done
+
+- Narrowing the poller to present ranges (Phase 3) and the provisional →
+  confirmed baseline transition after a clean run.
+- The first profile from a second generator. The friend's unit is the
+  candidate; its August cloud dump predates the raw blocks.

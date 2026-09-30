@@ -97,6 +97,14 @@ schematic, layout, gerbers and a JLCPCB-ready fab package in
 [`hardware/pcb/`](hardware/pcb/) — and the firmware is MIT licensed. Buying a board
 is a convenience, not a requirement.
 
+## It learns the generator it is plugged into
+
+On first healthy contact the bridge probes the controller once — what it
+answers, which alarm inputs are wired — and publishes a **Controller
+Profile**. Home Assistant shows the learned family as the device model,
+plus *Registers present*, *Alarm inputs indeterminate* and *Commissioned*.
+**Run Discovery** repeats it. See [`docs/discovery.md`](docs/discovery.md).
+
 ## If something looks wrong
 
 The bridge reports its own health, because a monitor that fails silently is worse
