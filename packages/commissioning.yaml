@@ -15,8 +15,14 @@
 #   1. Identity   0x0000 protocol revision, 0x0055 firmware, 0x00B5 model
 #                 (0x00B5 is documented to answer on some controllers and
 #                 time out on others -- either outcome is information).
-#   2. Presence   every register 0x0000-0x0056 and the alt block 0x00B4-0x00CE,
-#                 one at a time: did it answer?
+#   2. Presence   The poller's six ranges are proven by their own sensors
+#                 having values (a range that returns an exception every cycle
+#                 never populates them). The probe asks only about what the
+#                 poller does not read: the ten gaps inside 0x0000-0x0056 that
+#                 genmon says vary by model, and the alt block 0x00B4-0x00CE
+#                 as four reads. One command in flight at a time; after any
+#                 miss, a heartbeat read of 0x0000 that also carries the
+#                 protocol revision.
 #   3. Baseline   the alarm block 0x0040-0x004D as it reads on this machine
 #                 at rest, per nibble: F = not present, 1 = wired and OK,
 #                 0 = INDETERMINATE (shown, never treated as a fault),
@@ -45,10 +51,14 @@
 #
 #   * takes the bus EXCLUSIVELY: stop_poller() first, start_poller() after;
 #   * REFUSES to run while the engine is turning;
-#   * 114 single-register reads at 150 ms is ~17 s -- inside bus_healthy's
-#     30 s tolerance, so Home Assistant never even sees the bus blink; a
-#     watchdog forces polling back on at 3 minutes whatever happens, well
-#     under the 5-minute bridge-dark alert, so a probe never pages anyone;
+#   * ~16 probes plus heartbeats, one in flight at a time, RETRIES OFF for the
+#     duration: a present register answers in tens of ms, an absent one costs
+#     one send-wait (~250 ms) plus a heartbeat. Worst case ~10 s, inside
+#     bus_healthy's 30 s tolerance, so Home Assistant never sees the bus
+#     blink. The first version queued 114 commands with retries on and no
+#     heartbeat; the controller was marked offline, its queue was cleared,
+#     and the bus was dead for three minutes. A watchdog forces polling back
+#     on at 3 minutes whatever happens, under the 5-minute bridge-dark alert;
 #   * no per-register entities: the board runs near 82% RAM. Two entities,
 #     total -- the profile string and the button.
 #
@@ -103,6 +113,29 @@ globals:
     type: uint16_t
     restore_value: false
     initial_value: '0'
+  # One command in flight at a time. 0 = ready for the next probe, 1 = probe
+  # awaiting an answer, 2 = heartbeat awaiting an answer, 3 = heartbeat due.
+  - id: disc_state
+    type: uint8_t
+    restore_value: false
+    initial_value: '0'
+  - id: disc_sent_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: disc_answered
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: disc_hb_fail
+    type: uint8_t
+    restore_value: false
+    initial_value: '0'
+  # The controller's normal retry setting, put back when the probe ends.
+  - id: disc_saved_retries
+    type: uint8_t
+    restore_value: false
+    initial_value: '4'
 
 script:
   # Start a probe. One entry point for the button and the automatic trigger.
@@ -118,10 +151,33 @@ script:
           for (int i = 0; i < 3; i++) id(prof_ident)[i] = 0xFFFF;
           id(disc_idx) = 0;
           id(disc_hits) = 0;
+          id(disc_state) = 3;                 // begin with a heartbeat: proves the bus, reads 0x0000
+          id(disc_answered) = false;
+          id(disc_hb_fail) = 0;
           id(disc_started_ms) = millis();
           id(disc_active) = true;
+          // RETRIES OFF FOR THE DURATION. ESPHome pools non-responses per
+          // controller: each miss counts toward max_cmd_retries, and past it the
+          // controller is marked offline and its whole transmit queue is
+          // cleared. With the default 4, one absent register meant five
+          // attempts (~1.25 s) and then every queued probe thrown away -- which
+          // is how the first version left the bus dead for three minutes. At
+          // zero, a miss costs one send-wait (~250 ms); the heartbeat that
+          // follows every miss brings the controller back online.
+          id(disc_saved_retries) = id(gc1032)->get_max_cmd_retries();
+          id(gc1032)->set_max_cmd_retries(0);
+          // The hub waits send_wait_time (2000 ms default, and this build sets no
+          // other value) for a reply before declaring a miss. Half a second is
+          // ample for a controller that answers in 15-25 ms, and it is what
+          // makes an absent register cheap. Restored in disc_finish.
+          id(rs485_bus)->set_send_wait_time(500);
           id(gc1032)->stop_poller();
-          ESP_LOGI("commission", "=== DISCOVERY START: FC04 0x0000-0x0056 + 0x00B4-0x00CE, poller stopped ===");
+          // stop_poller() stops NEW poll cycles; the cycle already handed to the
+          // hub (11 frames) keeps draining for up to ~13 s. Probing into that
+          // would interleave with it, so wait it out first: state 4.
+          id(disc_state) = 4;
+          id(disc_sent_ms) = millis();
+          ESP_LOGI("commission", "=== DISCOVERY START: letting the current poll cycle drain, then probing one command at a time ===");
 
   # End the bus-exclusive part: polling resumes here. The baseline and
   # plausibility are read from the live sensors 25 s later, once they have
@@ -133,10 +189,34 @@ script:
       - lambda: |-
           if (!id(disc_active)) return;
           id(disc_active) = false;
+          id(gc1032)->set_max_cmd_retries(id(disc_saved_retries));
+          id(rs485_bus)->set_send_wait_time(2000);   // the hub's default; no getter exists
           id(gc1032)->start_poller();
-          ESP_LOGI("commission", "=== DISCOVERY: %u of 114 registers answered. Polling resumed; baseline in 25 s. ===",
-                   (unsigned) id(disc_hits));
+          ESP_LOGI("commission", "=== DISCOVERY: %u probes answered (0x0000 %s). Polling resumed; baseline in 25 s. ===",
+                   (unsigned) id(disc_hits), id(prof_ident)[0] == 0xFFFF ? "did NOT answer" : "answered");
           App.scheduler.set_timeout(id(controller_profile), "disc_finalize", 25000, []() {
+          // No answer from 0x0000 means the bus never spoke to us during the
+          // probe: nothing here is knowledge, so nothing is recorded, and the
+          // automatic trigger will try again when bus_healthy says it may.
+          if (id(prof_ident)[0] == 0xFFFF) {
+            ESP_LOGE("commission", "Probe got no answer from the controller; profile NOT recorded.");
+            return;
+          }
+          // The poller's own ranges are proven by their sensors having values:
+          // a range that returns an exception every cycle never populates
+          // them. That is presence knowledge for free, and it is why the probe
+          // above only asks about the addresses the poller does not read.
+          struct { uint16_t lo, hi; sensor::Sensor *witness; } ranges[6] = {
+            {0x0000, 0x0027, id(protocol_revision)},
+            {0x0029, 0x002A, id(cumulative_apparent_energy)},
+            {0x002B, 0x002C, id(cumulative_reactive_energy)},
+            {0x0033, 0x0036, id(oil_pressure_bar)},
+            {0x0038, 0x003D, id(battery_voltage)},
+            {0x0040, 0x0056, id(alarm_reg_40)},
+          };
+          for (auto &r : ranges)
+            if (!std::isnan(r.witness->state))
+              for (uint16_t a = r.lo; a <= r.hi; a++) id(prof_present)[a / 32] |= (1UL << (a % 32));
           sensor::Sensor *regs[14] = {
             id(alarm_reg_40), id(alarm_reg_41), id(alarm_reg_42), id(alarm_reg_43),
             id(alarm_reg_44), id(alarm_reg_45), id(alarm_reg_46), id(alarm_reg_47),
@@ -189,30 +269,108 @@ interval:
             return;
           }
           // Watchdog: polling is never left off because a probe misbehaved.
-          if (millis() - id(disc_started_ms) > 180000UL) {
+          const uint32_t now = millis();
+          if (now - id(disc_started_ms) > 180000UL) {
             ESP_LOGW("commission", "WATCHDOG: discovery exceeded 3 minutes, forcing polling back on.");
             id(disc_finish).execute();
             return;
           }
+          // ---- settle: let the in-flight poll cycle drain ---------------------
+          if (id(disc_state) == 4) {
+            if (now - id(disc_sent_ms) < 12000) return;
+            id(disc_state) = 3;                  // first act: a heartbeat
+          }
+          // ---- outcome of the command in flight -----------------------------
+          // A custom command's callback fires only on an answer; a miss is
+          // silence. 900 ms is the probe's 500 ms send-wait plus the 200 ms
+          // turnaround plus margin, so silence that long IS the answer: not
+          // present.
+          if (id(disc_state) == 1 || id(disc_state) == 2) {
+            if (id(disc_answered)) {
+              if (id(disc_state) == 2) id(disc_hb_fail) = 0;
+              id(disc_state) = 0;
+            } else if (now - id(disc_sent_ms) > 900) {
+              if (id(disc_state) == 2) {
+                // The heartbeat itself went unanswered: the controller is not
+                // talking to us. Three in a row and the probe gives up rather
+                // than hammer a bus that has a real problem.
+                id(disc_hb_fail) = id(disc_hb_fail) + 1;
+                if (id(disc_hb_fail) >= 3) {
+                  ESP_LOGE("commission", "Controller not answering the heartbeat; aborting the probe.");
+                  id(disc_finish).execute();
+                  return;
+                }
+              }
+              id(disc_state) = 3;           // a miss (or a failed heartbeat): heartbeat next
+            } else {
+              return;                        // still waiting
+            }
+          }
+          // ---- heartbeat: known-good read of 0x0000-0x0001 --------------------
+          // Restores the controller to online after a miss (any answer resets
+          // the pooled miss counter) and captures the protocol revision.
+          //
+          // TWO registers, deliberately. The poller reads 0x0000 as a single
+          // register, and the hub de-duplicates byte-identical frames: a
+          // one-register heartbeat was absorbed into the poll's entry, the
+          // controller's answers went to the poll, and this code saw silence
+          // every time. A different count is a different frame.
+          const uint8_t slave = (uint8_t) ${modbus_address};
+          if (id(disc_state) == 3) {
+            std::vector<uint8_t> hb = { slave, 0x04, 0x00, 0x00, 0x00, 0x02 };
+            auto cmd = esphome::modbus_controller::ModbusCommandItem::create_custom_command(
+              id(gc1032), hb,
+              [](esphome::modbus_controller::EntityType, uint16_t, std::span<const uint8_t> data) {
+                // The callback receives the REGISTER BYTES ONLY -- no address,
+                // function code or byte count (seen on the wire 2026-09-29: a
+                // one-register probe hands the handler exactly two bytes).
+                if (data.size() >= 2) id(prof_ident)[0] = (uint16_t) (data[0] << 8) | data[1];
+                id(disc_answered) = true;
+                id(last_good_ms) = millis();    // the controller answered: the bus is alive
+              });
+            id(gc1032)->queue_command(cmd);
+            id(disc_state) = 2; id(disc_answered) = false; id(disc_sent_ms) = now;
+            return;
+          }
+          // ---- next probe ----------------------------------------------------
+          // Only what the poller does not already read: the gaps inside
+          // 0x0000-0x0056 (which genmon says vary by model), the firmware and
+          // model words, and the alt block as four reads rather than 27.
+          // 0x0033-0x0036 (oil, coolant, fuel) is probed directly even though
+          // the poller reads it: on a unit without those senders every value is
+          // 0xFFFF and the sensors are NaN, so no witness can vouch for it.
+          static const uint16_t PROBE_ADDR[17]  = {0x0028, 0x002D, 0x002E, 0x002F, 0x0030, 0x0031, 0x0032, 0x0033, 0x0037,
+                                                   0x003E, 0x003F, 0x0055, 0x00B5, 0x00B4, 0x00C4, 0x00C7, 0x00CE};
+          static const uint8_t  PROBE_COUNT[17] = {1, 1, 1, 1, 1, 1, 1, 4, 1,
+                                                   1, 1, 1, 1, 14, 1, 1, 1};
           const uint16_t i = id(disc_idx);
-          if (i >= 114) { id(disc_finish).execute(); return; }
+          if (i >= 17) { id(disc_finish).execute(); return; }
           id(disc_idx) = i + 1;
-          const uint16_t addr = (i < 0x57) ? i : (uint16_t) (0x00B4 + (i - 0x57));
-          std::vector<uint8_t> frame = { 0x04, (uint8_t)(addr >> 8), (uint8_t)(addr & 0xFF), 0x00, 0x01 };
+          const uint16_t addr = PROBE_ADDR[i];
+          const uint8_t  n    = PROBE_COUNT[i];
+          std::vector<uint8_t> frame = { slave, 0x04, (uint8_t)(addr >> 8), (uint8_t)(addr & 0xFF), 0x00, n };
           auto cmd = esphome::modbus_controller::ModbusCommandItem::create_custom_command(
             id(gc1032), frame,
-            [addr](esphome::modbus_controller::EntityType, uint16_t, std::span<const uint8_t> data) {
-              if (data.size() < 5 || data[1] != 0x04) return;
-              const uint16_t v = (uint16_t) (data[3] << 8) | data[4];
-              if (addr < 0x80) id(prof_present)[addr / 32] |= (1UL << (addr % 32));
-              else if (addr >= 0x00B4 && addr <= 0x00D3) id(prof_present)[4] |= (1UL << (addr - 0x00B4));
-              if (addr == 0x0000) id(prof_ident)[0] = v;
+            [addr, n](esphome::modbus_controller::EntityType, uint16_t, std::span<const uint8_t> data) {
+              // Register bytes only: 2 per register requested.
+              if (data.size() < (size_t) (2 * n)) return;
+              const uint16_t v = (uint16_t) (data[0] << 8) | data[1];
+              for (uint16_t a = addr; a < addr + n; a++) {
+                if (a < 0x80) id(prof_present)[a / 32] |= (1UL << (a % 32));
+                else if (a >= 0x00B4 && a <= 0x00D3) id(prof_present)[4] |= (1UL << (a - 0x00B4));
+              }
               if (addr == 0x0055) id(prof_ident)[1] = v;
               if (addr == 0x00B5) id(prof_ident)[2] = v;
               id(disc_hits) = id(disc_hits) + 1;
-              ESP_LOGD("commission", "0x%04X answered: 0x%04X", (unsigned) addr, (unsigned) v);
+              id(disc_answered) = true;
+              // A probe answer is a bus read like any other: without this the
+              // miss counter charged every 10 s of a probe as a missed poll and
+              // Bus Success Rate dipped on each commissioning run.
+              id(last_good_ms) = millis();
+              ESP_LOGD("commission", "0x%04X x%u answered: 0x%04X", (unsigned) addr, (unsigned) n, (unsigned) v);
             });
           id(gc1032)->queue_command(cmd);
+          id(disc_state) = 1; id(disc_answered) = false; id(disc_sent_ms) = now;
 
 button:
   - platform: template
@@ -240,7 +398,10 @@ text_sensor:
     id: controller_profile
     icon: mdi:card-account-details-outline
     entity_category: diagnostic
-    update_interval: never
+    # Republished every five minutes so a fresh boot (or a reconnecting Home
+    # Assistant) sees the stored profile without waiting for a probe; the
+    # finalize step also publishes immediately.
+    update_interval: 300s
     lambda: |-
       if (!(id(prof_flags) & 0x01)) return std::string("not commissioned");
       char buf[320];

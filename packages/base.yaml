@@ -14,6 +14,11 @@ logger:
   # Modbus frames are logged at VERY_VERBOSE. To watch the bus during bring-up:
   #   logger: {level: VERY_VERBOSE, logs: {modbus: VERY_VERBOSE}}
   # Leave at INFO for normal running — VERY_VERBOSE over Wi-Fi will drop frames.
+  #
+  # To watch a commissioning run frame by frame (what settled the probe's
+  # frame format and the hub's de-duplication on 2026-09-29):
+  #   level: VERBOSE, logs: {modbus: VERBOSE, modbus_controller: VERBOSE,
+  #   commission: DEBUG} with every other tag pinned to INFO.
 
 wifi:
   # NO NETWORK IS COMPILED IN. That is deliberate.
