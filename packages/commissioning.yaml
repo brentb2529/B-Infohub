@@ -404,7 +404,12 @@ text_sensor:
     update_interval: 300s
     lambda: |-
       if (!(id(prof_flags) & 0x01)) return std::string("not commissioned");
-      char buf[320];
+      char buf[400];
+      // The alarm block as read at commissioning, 0x0040-0x004D, four hex
+      // digits per register. Consumers apply the four-state rule with this
+      // and contract alarm_bits; the counts below are for people.
+      char base[57];
+      for (int i = 0; i < 14; i++) snprintf(base + i * 4, 5, "%04X", id(prof_alarm_base)[i]);
       int present = 0;
       for (int w = 0; w < 5; w++) present += __builtin_popcount(id(prof_present)[w]);
       int nF = 0, n1 = 0, n0 = 0, nX = 0;
@@ -418,13 +423,13 @@ text_sensor:
       snprintf(buf, sizeof(buf),
                "{\"v\":1,\"family\":\"%s\",\"proto\":\"%04X\",\"fw\":\"%04X\",\"model\":\"%04X\","
                "\"present\":%d,\"map\":\"%08lX%08lX%08lX%08lX\",\"alt\":\"%08lX\","
-               "\"alarm\":{\"absent\":%d,\"ok\":%d,\"indeterminate\":%d,\"unexpected\":%d,\"provisional\":%s},"
+               "\"alarm\":{\"absent\":%d,\"ok\":%d,\"indeterminate\":%d,\"unexpected\":%d,\"provisional\":%s,\"base\":\"%s\"},"
                "\"battery_ok\":%s,\"utility_ok\":%s,\"captured\":%lu}",
                gc ? "gc103x" : "unknown", id(prof_ident)[0], id(prof_ident)[1], id(prof_ident)[2],
                present, (unsigned long) id(prof_present)[0], (unsigned long) id(prof_present)[1],
                (unsigned long) id(prof_present)[2], (unsigned long) id(prof_present)[3],
                (unsigned long) id(prof_present)[4],
-               nF, n1, n0, nX, (id(prof_flags) & 0x02) ? "true" : "false",
+               nF, n1, n0, nX, (id(prof_flags) & 0x02) ? "true" : "false", base,
                (id(prof_flags) & 0x04) ? "true" : "false", (id(prof_flags) & 0x08) ? "true" : "false",
                (unsigned long) id(prof_captured));
       return std::string(buf);

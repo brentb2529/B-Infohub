@@ -11,7 +11,7 @@ built, ids and all) plus contract/telemetry.py, and writes:
 
 Never edit either output by hand; edit telemetry.py and re-run.
 """
-import json, subprocess, sys, pathlib, textwrap
+import json, re, subprocess, sys, pathlib, textwrap
 import yaml
 from esphome.helpers import sanitize, snake_case
 
@@ -134,6 +134,15 @@ local_only = [(i, m) for i, m in ents.items()
 alarms = [(i, ents[i]["name"]) for i in ents
           if ents[i]["dom"] == "binary_sensor" and i not in T.NOT_A_FAULT
           and not ents[i]["diag"] and not ents[i]["off"]]
+
+# Register, mask and asserted value for every decoded alarm, read straight
+# out of the generated lambdas so this can never disagree with the firmware.
+_ALARM_RE = re.compile(
+    r'id:\s*(\w+)\n(?:.*\n)*?\s*return \(\(\(uint16_t\) id\(alarm_reg_([0-9a-f]{2})\)\.state\) & 0x([0-9A-Fa-f]{4})\) == 0x([0-9A-Fa-f]{4});')
+alarm_bits = {}
+for lid, reg, mask, value in _ALARM_RE.findall((ROOT / "packages/gc1032-alarms.yaml").read_text()):
+    if lid in ents:
+        alarm_bits[ents[lid]["object_id"]] = {"reg": int(reg, 16), "mask": int(mask, 16), "value": int(value, 16)}
 
 # ---------------------------------------------------------------- lambda ---
 L = []
@@ -504,6 +513,12 @@ contract = {
                                          "api": m["api"]}
                         for lid, m in sorted(local_only)},
     "alarm_keys": sorted(ents[i]["object_id"] for i, _ in alarms),
+    # Where each alarm lives: register 0x0040-0x004F, mask and asserted
+    # value, lifted from the generated decode lambdas. A consumer with the
+    # commissioning baseline (profile "base") can apply the four-state rule
+    # from docs/alarm-encoding.md: a nibble that read F at rest is not
+    # present, 0 at rest is indeterminate, and only 1 -> 0 is a fault.
+    "alarm_bits": alarm_bits,
     # Settings a consumer may WRITE, keyed by object_id. See T.CONTROLS.
     "controls": controls,
     "snapshot_slots": [{"key": k, "scale": sc, "esphome_id": e}
