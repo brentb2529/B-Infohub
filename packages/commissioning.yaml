@@ -45,11 +45,12 @@
 #
 #   * takes the bus EXCLUSIVELY: stop_poller() first, start_poller() after;
 #   * REFUSES to run while the engine is turning;
-#   * 114 single-register reads at 300 ms is ~35 s; a watchdog forces polling
-#     back on at 3 minutes whatever happens, well under the 5-minute
-#     bridge-dark alert, so a probe never pages anyone;
-#   * no per-register entities: the board runs near 82% RAM. Five entities,
-#     total.
+#   * 114 single-register reads at 150 ms is ~17 s -- inside bus_healthy's
+#     30 s tolerance, so Home Assistant never even sees the bus blink; a
+#     watchdog forces polling back on at 3 minutes whatever happens, well
+#     under the 5-minute bridge-dark alert, so a probe never pages anyone;
+#   * no per-register entities: the board runs near 82% RAM. Two entities,
+#     total -- the profile string and the button.
 #
 # PASSTHROUGH IS UNAFFECTED. Port B answers the InfoHub from cached values,
 # never from the wire, so the InfoHub sees a normal bus throughout.
@@ -122,8 +123,11 @@ script:
           id(gc1032)->stop_poller();
           ESP_LOGI("commission", "=== DISCOVERY START: FC04 0x0000-0x0056 + 0x00B4-0x00CE, poller stopped ===");
 
-  # End the bus-exclusive part. Polling resumes here; the baseline and
-  # plausibility are taken from live sensors once they have refreshed.
+  # End the bus-exclusive part: polling resumes here. The baseline and
+  # plausibility are read from the live sensors 25 s later, once they have
+  # refreshed -- scheduled with set_timeout rather than a second script,
+  # because every script and interval is a heap-resident automation and this
+  # board has none to spare (see the note above text_sensor:).
   - id: disc_finish
     then:
       - lambda: |-
@@ -132,14 +136,7 @@ script:
           id(gc1032)->start_poller();
           ESP_LOGI("commission", "=== DISCOVERY: %u of 114 registers answered. Polling resumed; baseline in 25 s. ===",
                    (unsigned) id(disc_hits));
-      - delay: 25s
-      - script.execute: disc_finalize
-
-  # Capture the alarm baseline and plausibility from the (now refreshed)
-  # sensors, stamp the profile, publish.
-  - id: disc_finalize
-    then:
-      - lambda: |-
+          App.scheduler.set_timeout(id(controller_profile), "disc_finalize", 25000, []() {
           sensor::Sensor *regs[14] = {
             id(alarm_reg_40), id(alarm_reg_41), id(alarm_reg_42), id(alarm_reg_43),
             id(alarm_reg_44), id(alarm_reg_45), id(alarm_reg_46), id(alarm_reg_47),
@@ -164,16 +161,39 @@ script:
                    id(prof_ident)[0], id(prof_ident)[1], id(prof_ident)[2], (unsigned) id(disc_hits),
                    complete ? "captured" : "INCOMPLETE", (flags & 0x04) ? "plausible" : "IMPLAUSIBLE",
                    (flags & 0x08) ? "plausible" : "IMPLAUSIBLE");
-      - component.update: controller_profile
-      - component.update: registers_present
-      - component.update: alarm_inputs_indeterminate
+          id(controller_profile).update();
+          });
 
 interval:
-  # The probe itself: one register per tick while active.
-  - interval: 300ms
+  # ONE tick does three jobs -- probe step, automatic first run, watchdog --
+  # because each interval is its own heap-resident automation.
+  # 150 ms per register: a single-register read and reply is ~16 ms on the
+  # wire at 9600 baud, so this is still generous, and it keeps the whole probe
+  # (114 reads, ~17 s) inside bus_healthy's three-missed-polls tolerance --
+  # Home Assistant never sees the bus go unhealthy and never falls back to
+  # the cloud for a probe.
+  - interval: 150ms
     then:
       - lambda: |-
-          if (!id(disc_active)) return;
+          static uint16_t tick = 0;
+          tick++;
+          if (!id(disc_active)) {
+            // Automatic first run: no profile yet, a minute past boot so the
+            // sensors are populated, bus healthy, engine stopped. Checked every
+            // 30 s (200 ticks). Never re-runs on its own; a re-probe is a button.
+            if ((tick % 200) == 0 && !(id(prof_flags) & 0x01) && millis() > 60000UL
+                && id(bus_healthy).state && !id(engine_running).state) {
+              ESP_LOGI("commission", "No profile stored and the bus is healthy: commissioning this controller.");
+              id(disc_start).execute();
+            }
+            return;
+          }
+          // Watchdog: polling is never left off because a probe misbehaved.
+          if (millis() - id(disc_started_ms) > 180000UL) {
+            ESP_LOGW("commission", "WATCHDOG: discovery exceeded 3 minutes, forcing polling back on.");
+            id(disc_finish).execute();
+            return;
+          }
           const uint16_t i = id(disc_idx);
           if (i >= 114) { id(disc_finish).execute(); return; }
           id(disc_idx) = i + 1;
@@ -194,28 +214,6 @@ interval:
             });
           id(gc1032)->queue_command(cmd);
 
-  # Automatic first run: no profile yet, bus healthy, engine stopped, and a
-  # minute past boot so the sensors are populated. Never re-runs on its own;
-  # a re-probe is a button press.
-  - interval: 30s
-    then:
-      - lambda: |-
-          if (id(disc_active) || (id(prof_flags) & 0x01)) return;
-          if (millis() < 60000UL) return;
-          if (!id(bus_healthy).state || id(engine_running).state) return;
-          ESP_LOGI("commission", "No profile stored and the bus is healthy: commissioning this controller.");
-          id(disc_start).execute();
-
-  # Watchdog. Polling is never left off because a probe misbehaved.
-  - interval: 10s
-    then:
-      - lambda: |-
-          if (!id(disc_active)) return;
-          if (millis() - id(disc_started_ms) > 180000UL) {
-            ESP_LOGW("commission", "WATCHDOG: discovery exceeded 3 minutes, forcing polling back on.");
-            id(disc_finish).execute();
-          }
-
 button:
   - platform: template
     name: "Run Discovery"
@@ -225,47 +223,18 @@ button:
     on_press:
       - script.execute: disc_start
 
-binary_sensor:
-  - platform: template
-    name: "Commissioned"
-    id: commissioned
-    device_class: running
-    entity_category: diagnostic
-    lambda: 'return (id(prof_flags) & 0x01) != 0;'
-
-sensor:
-  - platform: template
-    name: "Registers Present"
-    id: registers_present
-    icon: mdi:table-large
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    update_interval: never
-    lambda: |-
-      if (!(id(prof_flags) & 0x01)) return NAN;
-      int n = 0;
-      for (int w = 0; w < 5; w++) n += __builtin_popcount(id(prof_present)[w]);
-      return (float) n;
-
-  # Conditions whose nibble reads 0 at rest: shown, never called faults.
-  - platform: template
-    name: "Alarm Inputs Indeterminate"
-    id: alarm_inputs_indeterminate
-    icon: mdi:help-circle-outline
-    accuracy_decimals: 0
-    entity_category: diagnostic
-    update_interval: never
-    lambda: |-
-      if (!(id(prof_flags) & 0x01)) return NAN;
-      int zero = 0;
-      for (int i = 0; i < 14; i++)
-        for (int s = 12; s >= 0; s -= 4)
-          if (((id(prof_alarm_base)[i] >> s) & 0xF) == 0x0) zero++;
-      return (float) zero;
-
+# TWO ENTITIES, NOT FIVE. The first cut also published Registers Present,
+# Alarm Inputs Indeterminate and Commissioned as their own entities. That
+# build aborted on its first boot: operator new[] failed inside the API
+# server's overflow buffer while it was sending the entity list to a
+# reconnecting client, and OTA rollback put the previous image back. The
+# board's largest free block is ~32 KB and every entity costs some of it at
+# exactly that moment. All three numbers are in the profile string anyway;
+# the consumer parses them. See ../docs/development.md on the RAM budget.
 text_sensor:
   # The whole profile in one string. Consumers (ha-energytrak, a person) read
-  # this; nothing on the device decodes it further.
+  # this; nothing on the device decodes it further. "not commissioned" until
+  # the first probe has run.
   - platform: template
     name: "Controller Profile"
     id: controller_profile

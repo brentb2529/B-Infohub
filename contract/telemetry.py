@@ -208,9 +208,6 @@ INCLUDE_DIAGNOSTICS = {
     # alarm inputs are real. Diagnostic by category; it is the identity of
     # the generator behind the bridge.
     "controller_profile",
-    "registers_present",
-    "alarm_inputs_indeterminate",
-    "commissioned",
 
     # ---- Port B / InfoHub ------------------------------------------------
     # packages/passthrough-health.yaml. Whether the InfoHub is polling us and
