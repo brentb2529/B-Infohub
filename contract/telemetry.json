@@ -174,6 +174,14 @@
       "kind": "bin",
       "api": true
     },
+    "alarm_inputs_indeterminate": {
+      "object_id": "alarm_inputs_indeterminate",
+      "esphome_id": "alarm_inputs_indeterminate",
+      "unit": null,
+      "name": "Alarm Inputs Indeterminate",
+      "kind": "num",
+      "api": true
+    },
     "alarm_register_1": {
       "object_id": "alarm_register_1",
       "esphome_id": "alarm_reg_40",
@@ -470,6 +478,14 @@
       "kind": "num",
       "api": false
     },
+    "commissioned": {
+      "object_id": "commissioned",
+      "esphome_id": "commissioned",
+      "unit": null,
+      "name": "Commissioned",
+      "kind": "bin",
+      "api": true
+    },
     "controller_clock_age": {
       "object_id": "controller_clock_age",
       "esphome_id": "controller_clock_age",
@@ -484,6 +500,14 @@
       "unit": "min",
       "name": "Controller Clock Skew",
       "kind": "num",
+      "api": true
+    },
+    "controller_profile": {
+      "object_id": "controller_profile",
+      "esphome_id": "controller_profile",
+      "unit": null,
+      "name": "Controller Profile",
+      "kind": "txt",
       "api": true
     },
     "controller_time": {
@@ -1030,6 +1054,14 @@
       "kind": "txt",
       "api": true
     },
+    "registers_present": {
+      "object_id": "registers_present",
+      "esphome_id": "registers_present",
+      "unit": null,
+      "name": "Registers Present",
+      "kind": "num",
+      "api": true
+    },
     "scheduled_exercise_in_progress": {
       "object_id": "scheduled_exercise_in_progress",
       "esphome_id": "scheduled_exercise",
@@ -1270,6 +1302,14 @@
       "kind": "button",
       "category": "diagnostic",
       "icon": "mdi:restart"
+    },
+    "run_discovery": {
+      "object_id": "run_discovery",
+      "esphome_id": "run_discovery",
+      "name": "Run Discovery",
+      "kind": "button",
+      "category": "config",
+      "icon": "mdi:radar"
     }
   },
   "snapshot_slots": [

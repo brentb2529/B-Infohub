@@ -1,0 +1,300 @@
+# Commissioning: learn what THIS controller answers, then run on that knowledge.
+#
+# WHY
+#
+# This firmware was written against one GC-1032. genmon's own definition says
+# register presence varies across the GC-1030 family -- "these registers show
+# data in some models yet the controller does not respond in others" -- and
+# the first other unit we looked at (a cellular InfoHub on a GC controller)
+# reports a visibly different field set to the cloud. A bridge going out in
+# the wild has to discover the generator it is plugged into rather than
+# assume it is Brent's. See ../docs/discovery.md.
+#
+# WHAT IT DOES (all reads, FC04 only, nothing ever written)
+#
+#   1. Identity   0x0000 protocol revision, 0x0055 firmware, 0x00B5 model
+#                 (0x00B5 is documented to answer on some controllers and
+#                 time out on others -- either outcome is information).
+#   2. Presence   every register 0x0000-0x0056 and the alt block 0x00B4-0x00CE,
+#                 one at a time: did it answer?
+#   3. Baseline   the alarm block 0x0040-0x004D as it reads on this machine
+#                 at rest, per nibble: F = not present, 1 = wired and OK,
+#                 0 = INDETERMINATE (shown, never treated as a fault),
+#                 anything else = unexpected. See ../docs/alarm-encoding.md
+#                 for why this is an inventory and not a decode.
+#   4. Plausibility  battery 8-16 V, utility 0 or 90-140 V per leg -- a range
+#                 that answers with nonsense is marked, not trusted.
+#
+# The result is a PROFILE, persisted in flash, published as one compact JSON
+# string plus three scalars. It runs ONCE, by itself, the first time the bus
+# is healthy with the engine stopped and no profile is stored; and again on
+# the Run Discovery button. It never runs while the engine turns.
+#
+# WHAT IT CANNOT KNOW, STATED PLAINLY
+#
+# ESPHome hands a custom command's callback the DATA of a reply. An exception
+# reply ("illegal address") only reaches an internal log line, and a timeout
+# reaches nothing. So each register is "answered" or "did not answer" -- the
+# firmware cannot tell a controller that refuses an address from one that
+# stays silent. That is fine here: bus_healthy already proves the wiring, so
+# "did not answer" means the register is not there for this controller.
+#
+# SAFETY ENVELOPE -- inherited from holding-sweep.yaml, which learned it the
+# hard way (its first version interleaved probe reads with the poll loop and
+# took telemetry down inside four minutes):
+#
+#   * takes the bus EXCLUSIVELY: stop_poller() first, start_poller() after;
+#   * REFUSES to run while the engine is turning;
+#   * 114 single-register reads at 300 ms is ~35 s; a watchdog forces polling
+#     back on at 3 minutes whatever happens, well under the 5-minute
+#     bridge-dark alert, so a probe never pages anyone;
+#   * no per-register entities: the board runs near 82% RAM. Five entities,
+#     total.
+#
+# PASSTHROUGH IS UNAFFECTED. Port B answers the InfoHub from cached values,
+# never from the wire, so the InfoHub sees a normal bus throughout.
+
+globals:
+  # ---- the profile (persisted) --------------------------------------------
+  # Presence bitmap. Words 0-3 cover 0x0000-0x007F bit-per-register; word 4
+  # covers the alt block 0x00B4-0x00CE (bit = addr - 0xB4).
+  - id: prof_present
+    type: uint32_t[5]
+    restore_value: true
+    initial_value: '{0, 0, 0, 0, 0}'
+  # 0x0040-0x004D exactly as read at commissioning.
+  - id: prof_alarm_base
+    type: uint16_t[14]
+    restore_value: true
+    initial_value: '{0,0,0,0,0,0,0,0,0,0,0,0,0,0}'
+  # 0x0000 protocol revision, 0x0055 firmware word, 0x00B5 model word.
+  # 0xFFFF = did not answer.
+  - id: prof_ident
+    type: uint16_t[3]
+    restore_value: true
+    initial_value: '{0xFFFF, 0xFFFF, 0xFFFF}'
+  # Unix time of the capture; 0 if the clock was not valid then.
+  - id: prof_captured
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+  # bit0 commissioned, bit1 baseline provisional (no clean run seen since),
+  # bit2 battery plausible, bit3 utility plausible.
+  - id: prof_flags
+    type: uint8_t
+    restore_value: true
+    initial_value: '0'
+
+  # ---- probe state (not persisted) ----------------------------------------
+  - id: disc_active
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: disc_idx
+    type: uint16_t
+    restore_value: false
+    initial_value: '0'
+  - id: disc_started_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: disc_hits
+    type: uint16_t
+    restore_value: false
+    initial_value: '0'
+
+script:
+  # Start a probe. One entry point for the button and the automatic trigger.
+  - id: disc_start
+    then:
+      - lambda: |-
+          if (id(disc_active)) return;
+          if (id(engine_running).state) {
+            ESP_LOGW("commission", "REFUSED: engine is running. Discovery waits for a stopped set.");
+            return;
+          }
+          for (int i = 0; i < 5; i++) id(prof_present)[i] = 0;
+          for (int i = 0; i < 3; i++) id(prof_ident)[i] = 0xFFFF;
+          id(disc_idx) = 0;
+          id(disc_hits) = 0;
+          id(disc_started_ms) = millis();
+          id(disc_active) = true;
+          id(gc1032)->stop_poller();
+          ESP_LOGI("commission", "=== DISCOVERY START: FC04 0x0000-0x0056 + 0x00B4-0x00CE, poller stopped ===");
+
+  # End the bus-exclusive part. Polling resumes here; the baseline and
+  # plausibility are taken from live sensors once they have refreshed.
+  - id: disc_finish
+    then:
+      - lambda: |-
+          if (!id(disc_active)) return;
+          id(disc_active) = false;
+          id(gc1032)->start_poller();
+          ESP_LOGI("commission", "=== DISCOVERY: %u of 114 registers answered. Polling resumed; baseline in 25 s. ===",
+                   (unsigned) id(disc_hits));
+      - delay: 25s
+      - script.execute: disc_finalize
+
+  # Capture the alarm baseline and plausibility from the (now refreshed)
+  # sensors, stamp the profile, publish.
+  - id: disc_finalize
+    then:
+      - lambda: |-
+          sensor::Sensor *regs[14] = {
+            id(alarm_reg_40), id(alarm_reg_41), id(alarm_reg_42), id(alarm_reg_43),
+            id(alarm_reg_44), id(alarm_reg_45), id(alarm_reg_46), id(alarm_reg_47),
+            id(alarm_reg_48), id(alarm_reg_49), id(alarm_reg_4a), id(alarm_reg_4b),
+            id(alarm_reg_4c), id(alarm_reg_4d),
+          };
+          bool complete = true;
+          for (int i = 0; i < 14; i++) {
+            if (std::isnan(regs[i]->state)) { complete = false; break; }
+            id(prof_alarm_base)[i] = (uint16_t) regs[i]->state;
+          }
+          uint8_t flags = 0x01;                       // commissioned
+          flags |= 0x02;                              // baseline provisional until a clean run
+          const float vb = id(battery_voltage).state;
+          if (!std::isnan(vb) && vb >= 8.0f && vb <= 16.0f) flags |= 0x04;
+          const float vu = id(utility_l1_voltage).state;
+          if (!std::isnan(vu) && (vu == 0.0f || (vu >= 90.0f && vu <= 140.0f))) flags |= 0x08;
+          id(prof_flags) = flags;
+          auto now = id(ha_time).now();
+          id(prof_captured) = now.is_valid() ? (uint32_t) now.timestamp : 0;
+          ESP_LOGI("commission", "PROFILE: ident 0x%04X/0x%04X/0x%04X, present %u, alarm baseline %s, battery %s, utility %s",
+                   id(prof_ident)[0], id(prof_ident)[1], id(prof_ident)[2], (unsigned) id(disc_hits),
+                   complete ? "captured" : "INCOMPLETE", (flags & 0x04) ? "plausible" : "IMPLAUSIBLE",
+                   (flags & 0x08) ? "plausible" : "IMPLAUSIBLE");
+      - component.update: controller_profile
+      - component.update: registers_present
+      - component.update: alarm_inputs_indeterminate
+
+interval:
+  # The probe itself: one register per tick while active.
+  - interval: 300ms
+    then:
+      - lambda: |-
+          if (!id(disc_active)) return;
+          const uint16_t i = id(disc_idx);
+          if (i >= 114) { id(disc_finish).execute(); return; }
+          id(disc_idx) = i + 1;
+          const uint16_t addr = (i < 0x57) ? i : (uint16_t) (0x00B4 + (i - 0x57));
+          std::vector<uint8_t> frame = { 0x04, (uint8_t)(addr >> 8), (uint8_t)(addr & 0xFF), 0x00, 0x01 };
+          auto cmd = esphome::modbus_controller::ModbusCommandItem::create_custom_command(
+            id(gc1032), frame,
+            [addr](esphome::modbus_controller::EntityType, uint16_t, std::span<const uint8_t> data) {
+              if (data.size() < 5 || data[1] != 0x04) return;
+              const uint16_t v = (uint16_t) (data[3] << 8) | data[4];
+              if (addr < 0x80) id(prof_present)[addr / 32] |= (1UL << (addr % 32));
+              else if (addr >= 0x00B4 && addr <= 0x00D3) id(prof_present)[4] |= (1UL << (addr - 0x00B4));
+              if (addr == 0x0000) id(prof_ident)[0] = v;
+              if (addr == 0x0055) id(prof_ident)[1] = v;
+              if (addr == 0x00B5) id(prof_ident)[2] = v;
+              id(disc_hits) = id(disc_hits) + 1;
+              ESP_LOGD("commission", "0x%04X answered: 0x%04X", (unsigned) addr, (unsigned) v);
+            });
+          id(gc1032)->queue_command(cmd);
+
+  # Automatic first run: no profile yet, bus healthy, engine stopped, and a
+  # minute past boot so the sensors are populated. Never re-runs on its own;
+  # a re-probe is a button press.
+  - interval: 30s
+    then:
+      - lambda: |-
+          if (id(disc_active) || (id(prof_flags) & 0x01)) return;
+          if (millis() < 60000UL) return;
+          if (!id(bus_healthy).state || id(engine_running).state) return;
+          ESP_LOGI("commission", "No profile stored and the bus is healthy: commissioning this controller.");
+          id(disc_start).execute();
+
+  # Watchdog. Polling is never left off because a probe misbehaved.
+  - interval: 10s
+    then:
+      - lambda: |-
+          if (!id(disc_active)) return;
+          if (millis() - id(disc_started_ms) > 180000UL) {
+            ESP_LOGW("commission", "WATCHDOG: discovery exceeded 3 minutes, forcing polling back on.");
+            id(disc_finish).execute();
+          }
+
+button:
+  - platform: template
+    name: "Run Discovery"
+    id: run_discovery
+    icon: mdi:radar
+    entity_category: config
+    on_press:
+      - script.execute: disc_start
+
+binary_sensor:
+  - platform: template
+    name: "Commissioned"
+    id: commissioned
+    device_class: running
+    entity_category: diagnostic
+    lambda: 'return (id(prof_flags) & 0x01) != 0;'
+
+sensor:
+  - platform: template
+    name: "Registers Present"
+    id: registers_present
+    icon: mdi:table-large
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      if (!(id(prof_flags) & 0x01)) return NAN;
+      int n = 0;
+      for (int w = 0; w < 5; w++) n += __builtin_popcount(id(prof_present)[w]);
+      return (float) n;
+
+  # Conditions whose nibble reads 0 at rest: shown, never called faults.
+  - platform: template
+    name: "Alarm Inputs Indeterminate"
+    id: alarm_inputs_indeterminate
+    icon: mdi:help-circle-outline
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      if (!(id(prof_flags) & 0x01)) return NAN;
+      int zero = 0;
+      for (int i = 0; i < 14; i++)
+        for (int s = 12; s >= 0; s -= 4)
+          if (((id(prof_alarm_base)[i] >> s) & 0xF) == 0x0) zero++;
+      return (float) zero;
+
+text_sensor:
+  # The whole profile in one string. Consumers (ha-energytrak, a person) read
+  # this; nothing on the device decodes it further.
+  - platform: template
+    name: "Controller Profile"
+    id: controller_profile
+    icon: mdi:card-account-details-outline
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      if (!(id(prof_flags) & 0x01)) return std::string("not commissioned");
+      char buf[320];
+      int present = 0;
+      for (int w = 0; w < 5; w++) present += __builtin_popcount(id(prof_present)[w]);
+      int nF = 0, n1 = 0, n0 = 0, nX = 0;
+      for (int i = 0; i < 14; i++)
+        for (int s = 12; s >= 0; s -= 4) {
+          const uint8_t nib = (id(prof_alarm_base)[i] >> s) & 0xF;
+          if (nib == 0xF) nF++; else if (nib == 0x1) n1++; else if (nib == 0x0) n0++; else nX++;
+        }
+      // Family: the documented protocol revision AND the alarm block present.
+      const bool gc = (id(prof_ident)[0] == 0x8003) && ((id(prof_present)[2] & 0x0000FFFFUL) == 0x0000FFFFUL);
+      snprintf(buf, sizeof(buf),
+               "{\"v\":1,\"family\":\"%s\",\"proto\":\"%04X\",\"fw\":\"%04X\",\"model\":\"%04X\","
+               "\"present\":%d,\"map\":\"%08lX%08lX%08lX%08lX\",\"alt\":\"%08lX\","
+               "\"alarm\":{\"absent\":%d,\"ok\":%d,\"indeterminate\":%d,\"unexpected\":%d,\"provisional\":%s},"
+               "\"battery_ok\":%s,\"utility_ok\":%s,\"captured\":%lu}",
+               gc ? "gc103x" : "unknown", id(prof_ident)[0], id(prof_ident)[1], id(prof_ident)[2],
+               present, (unsigned long) id(prof_present)[0], (unsigned long) id(prof_present)[1],
+               (unsigned long) id(prof_present)[2], (unsigned long) id(prof_present)[3],
+               (unsigned long) id(prof_present)[4],
+               nF, n1, n0, nX, (id(prof_flags) & 0x02) ? "true" : "false",
+               (id(prof_flags) & 0x04) ? "true" : "false", (id(prof_flags) & 0x08) ? "true" : "false",
+               (unsigned long) id(prof_captured));
+      return std::string(buf);

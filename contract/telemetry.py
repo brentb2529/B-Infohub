@@ -203,6 +203,15 @@ INCLUDE_DIAGNOSTICS = {
     "alarm_block_changes",
     "alarm_block_unexpected",
 
+    # ---- Commissioning profile -------------------------------------------
+    # packages/commissioning.yaml: what this controller answers and which
+    # alarm inputs are real. Diagnostic by category; it is the identity of
+    # the generator behind the bridge.
+    "controller_profile",
+    "registers_present",
+    "alarm_inputs_indeterminate",
+    "commissioned",
+
     # ---- Port B / InfoHub ------------------------------------------------
     # packages/passthrough-health.yaml. Whether the InfoHub is polling us and
     # how much we have served it. Absent on 2026-09-26, when it mattered.
@@ -254,6 +263,11 @@ CONTROLS = {
     "cfg_mqtt_host",
     "cfg_mqtt_port",
     "apply_mqtt",
+
+    # ---- Discovery ------------------------------------------------------
+    # Re-runs the commissioning probe. Read-only on the bus; pauses polling
+    # for ~35 s under a 3-minute watchdog. Refuses while the engine runs.
+    "run_discovery",
 }
 
 # Alarms, for active_alarm_count / active_alarms. Filled by gen.py from the
