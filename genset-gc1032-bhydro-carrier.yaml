@@ -87,6 +87,7 @@ substitutions:
 
 esp32:
   board: esp32dev
+  cpu_frequency: 160MHz  # heat; see genset-gc1032.yaml
   framework:
     type: esp-idf
 

@@ -7,7 +7,7 @@ esphome:
   comment: "Briggs & Stratton GC-1032 RS-485 bridge (InfoHub replacement)"
   project:
     name: bbensten.b_infohub
-    version: "1.2.0"
+    version: "1.2.1"
 
 logger:
   level: INFO
@@ -42,7 +42,16 @@ wifi:
   # outage. The house is on UPS, so the LAN path survives -- which is what makes a
   # local bridge a real replacement for the InfoHub's cell modem rather than a
   # fair-weather one.
-  power_save_mode: none
+  #
+  # `light` is modem sleep between DTIM beacons, not a disconnect: the STA stays
+  # associated and the API/web/MQTT paths all keep working, at the cost of a
+  # few tens of ms of latency on inbound traffic. It was `none` until
+  # 2026-10-01, when afternoon sun on the enclosure took the die to 188 F and
+  # the RS-485 link to the controller failed (see cpu_frequency in
+  # genset-gc1032.yaml). The radio at full receive is the biggest single heat
+  # source on the board, so this buys real margin. Nothing time-critical rides
+  # on Wi-Fi: both UARTs are hardware and the InfoHub is answered from cache.
+  power_save_mode: light
   # Still never self-reboot merely because Wi-Fi dropped: the RS-485 bus keeps
   # being read, the flash event log keeps recording, and MQTT may still be
   # delivering. Rebooting would throw away the buffered evidence that is the

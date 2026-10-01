@@ -57,6 +57,13 @@ substitutions:
 
 esp32:
   board: esp32dev
+  # 160 MHz, not the 240 MHz default. The board self-heats ~75 F above ambient
+  # in its sealed outdoor box, and on 2026-10-01 afternoon sun took the die to
+  # 188 F and port A started dropping one byte per reply (bus dead for ~90
+  # min, reproduced on a fresh boot at the same temperature). Nothing here
+  # needs 240 MHz: the UARTs are hardware, the Modbus poller idles waiting on
+  # the controller, and the proxy answers from cache. Lower clock = less heat.
+  cpu_frequency: 160MHz
   # Custom table: bigger OTA slots at the expense of an oversized NVS.
   # See the header in partitions.csv -- and note that changing it needs one
   # USB flash, because a partition table cannot move itself over the air.
