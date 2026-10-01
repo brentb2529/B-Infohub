@@ -5,13 +5,13 @@
       "Application": "Pcbnew",
       "Version": "10.0.5"
     },
-    "CreationDate": "2026-08-31T21:52:52-04:00"
+    "CreationDate": "2026-10-01T16:28:30-04:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
       "Name": "binfohub_bridge",
       "GUID": "62696e66-6f68-4756-925f-627269646765",
-      "Revision": "2.1"
+      "Revision": "1.1"
     },
     "Size": {
       "X": 90.1,
@@ -34,77 +34,47 @@
   ],
   "FilesAttributes": [
     {
-      "Path": "binfohub_bridge-F_Cu.gtl",
+      "Path": "binfohub_bridge-F_Cu.gbr",
       "FileFunction": "Copper,L1,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-B_Cu.gbl",
+      "Path": "binfohub_bridge-B_Cu.gbr",
       "FileFunction": "Copper,L2,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-F_Adhesive.gta",
-      "FileFunction": "Glue,Top",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-B_Adhesive.gba",
-      "FileFunction": "Glue,Bot",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-F_Paste.gtp",
+      "Path": "binfohub_bridge-F_Paste.gbr",
       "FileFunction": "SolderPaste,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-B_Paste.gbp",
+      "Path": "binfohub_bridge-B_Paste.gbr",
       "FileFunction": "SolderPaste,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-F_Silkscreen.gto",
+      "Path": "binfohub_bridge-F_Silkscreen.gbr",
       "FileFunction": "Legend,Top",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-B_Silkscreen.gbo",
+      "Path": "binfohub_bridge-B_Silkscreen.gbr",
       "FileFunction": "Legend,Bot",
       "FilePolarity": "Positive"
     },
     {
-      "Path": "binfohub_bridge-F_Mask.gts",
+      "Path": "binfohub_bridge-F_Mask.gbr",
       "FileFunction": "SolderMask,Top",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "binfohub_bridge-B_Mask.gbs",
+      "Path": "binfohub_bridge-B_Mask.gbr",
       "FileFunction": "SolderMask,Bot",
       "FilePolarity": "Negative"
     },
     {
-      "Path": "binfohub_bridge-User_Drawings.gbr",
-      "FileFunction": "Other,User",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-User_Comments.gbr",
-      "FileFunction": "Other,User",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-User_Eco1.gbr",
-      "FileFunction": "Other,User",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-User_Eco2.gbr",
-      "FileFunction": "Other,User",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "binfohub_bridge-Edge_Cuts.gm1",
+      "Path": "binfohub_bridge-Edge_Cuts.gbr",
       "FileFunction": "Profile",
       "FilePolarity": "Positive"
     },

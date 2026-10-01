@@ -1,0 +1,79 @@
+# Enclosure fan on J5 -- REV 1.1 BOARDS ONLY.
+#
+# Rev 1.0 has no J5 and nothing on IO32, so this package is not included by
+# default; genset-gc1032.yaml carries the commented include. On a rev 1.0 board
+# the output would merely toggle an unconnected pin, but the two entities cost
+# heap at the worst moment (API connect), so it stays out until there is a fan
+# to drive. Measured 2026-10-01: compiles, static RAM 82.5 % -> 83.0 %. That is
+# ABOVE the 82.8 % build that once aborted in the API server's overflow buffer
+# with two clients connecting at once (see the RAM note in packages/base.yaml),
+# so a rev 1.1 image that includes this should drop something else first --
+# the unmapped-register diagnostics in gc1032-unmapped.yaml are the obvious
+# candidates -- and watch Largest Free Block after the first connect.
+#
+# Hardware: 12 V through F3 (0.5 A) to J5 pin 1; J5 pin 2 is the drain of Q2,
+# an AO3400A switched from IO32 through 100R, held OFF by a 10k pull-down while
+# the ESP is in reset. D10 clamps the motor's inductive kick. 25 kHz PWM is
+# above hearing and above the ~20 kHz most 2-wire fans will commutate through;
+# a 4-wire fan runs happily from its supply pins alone.
+#
+# Control: a fan entity for Home Assistant (manual, 0-100 %) plus a threshold.
+# When the threshold is non-zero the bridge drives the fan itself from the die
+# temperature -- the thing that actually failed on 2026-10-01 -- so the fan
+# works with Home Assistant absent, which on a generator bridge is the case
+# that matters. Linear 40 -> 100 % between the threshold and threshold + 15 C;
+# off again 3 C below it. The internal sensor reads the die, not the air, and
+# the fielded unit's night baseline is ~52-57 C, so 70 C is a sensible default:
+# the bus failed at 88 C, and 1.2.1's clock and radio changes brought the same
+# afternoon to 72 C.
+substitutions:
+  fan_pin: GPIO32
+
+output:
+  - platform: ledc
+    pin: ${fan_pin}
+    id: fan_pwm
+    frequency: 25000 Hz
+    # Q2's gate is held low by R13 whenever this output is not actively high,
+    # so "off" is off through reset, flashing and boot, not just when told.
+
+fan:
+  - platform: speed
+    output: fan_pwm
+    id: enclosure_fan
+    name: "Enclosure Fan"
+    icon: mdi:fan
+    restore_mode: ALWAYS_OFF
+
+number:
+  - platform: template
+    name: "Fan On Above"
+    id: fan_on_above
+    icon: mdi:thermometer-alert
+    unit_of_measurement: "°C"
+    entity_category: config
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 70
+    restore_value: true
+    optimistic: true
+    mode: box
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          float thr = id(fan_on_above).state;
+          if (thr <= 0.0f) return;                       // 0 = manual only
+          float t = id(esp_temp).state;
+          if (std::isnan(t)) return;
+          auto call = id(enclosure_fan).make_call();
+          if (t >= thr) {
+            // 40 % at the threshold, 100 % at threshold + 15 C
+            float pct = 40.0f + 60.0f * std::min(1.0f, (t - thr) / 15.0f);
+            call.set_state(true); call.set_speed((int) pct);
+            call.perform();
+          } else if (t < thr - 3.0f && id(enclosure_fan).state) {
+            call.set_state(false); call.perform();
+          }

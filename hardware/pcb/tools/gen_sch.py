@@ -9,23 +9,21 @@ def get_lib_symbol(lib,name):
     """Return flattened lib symbol node renamed to Lib:Name, plus pin list [(num,name,type,x,y,ang,len)]"""
     key=(lib,name)
     if key in libcache: return libcache[key]
-    if lib=="binfohub": node=esp_symbol()
-    else:
-        node=sexp.load_symbol(SYMDIR+lib+".kicad_sym",name)
-        ext=sexp.find1(node,'extends')
-        if ext:
-            parent=get_lib_symbol(lib,sexp.unq(ext[1]))[0]
-            parent=copy.deepcopy(parent); pname=sexp.unq(parent[1]).split(':')[1]
-            props={sexp.unq(p[1]):p for p in sexp.find(node,'property')}
-            new=['symbol',q(name)]
-            for c in parent[2:]:
-                if isinstance(c,list) and c[0]=='property':
-                    if sexp.unq(c[1]) in props: c=props.pop(sexp.unq(c[1]))
-                if isinstance(c,list) and c[0]=='symbol':
-                    c[1]=q(sexp.unq(c[1]).replace(pname+'_',name+'_',1))
-                new.append(c)
-            for p in props.values(): new.append(p)
-            node=new
+    node=sexp.load_symbol(SYMDIR+lib+".kicad_sym",name)
+    ext=sexp.find1(node,'extends')
+    if ext:
+        parent=get_lib_symbol(lib,sexp.unq(ext[1]))[0]
+        parent=copy.deepcopy(parent); pname=sexp.unq(parent[1]).split(':')[1]
+        props={sexp.unq(p[1]):p for p in sexp.find(node,'property')}
+        new=['symbol',q(name)]
+        for c in parent[2:]:
+            if isinstance(c,list) and c[0]=='property':
+                if sexp.unq(c[1]) in props: c=props.pop(sexp.unq(c[1]))
+            if isinstance(c,list) and c[0]=='symbol':
+                c[1]=q(sexp.unq(c[1]).replace(pname+'_',name+'_',1))
+            new.append(c)
+        for p in props.values(): new.append(p)
+        node=new
     node=copy.deepcopy(node); node[1]=q(lib+":"+name)
     pins=[]
     for u in sexp.find(node,'symbol'):
@@ -34,21 +32,16 @@ def get_lib_symbol(lib,name):
             pins.append((sexp.unq(sexp.find1(p,'number')[1]),sexp.unq(sexp.find1(p,'name')[1]),p[1],float(at[1]),float(at[2]),float(at[3]),float(sexp.find1(p,'length')[1])))
     libcache[key]=(node,pins); return libcache[key]
 
-def esp_symbol():
-    L=['symbol',q("ESP32-DevKitC-38"),['pin_names',['offset','1.016']],['exclude_from_sim','no'],['in_bom','yes'],['on_board','yes']]
-    def prop(n,v,y,hide):
-        e=['effects',['font',['size','1.27','1.27']]]
-        if hide: e.append(['hide','yes'])
-        return ['property',q(n),q(v),['at','0',str(y),'0'],e]
-    L+= [prop("Reference","U",27.94,False),prop("Value","ESP32-DevKitC-38",-27.94,False),prop("Footprint","binfohub:ESP32-DevKitC-38",0,True),prop("Datasheet","https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html",0,True),
-         prop("Description","ESP32-DevKitC V4 38-pin module (2x 1x19 2.54 mm rows, 25.4 mm apart)",0,True)]
-    g=['symbol',q("ESP32-DevKitC-38_0_1"),['rectangle',['start','-12.7','25.4'],['end','12.7','-25.4'],['stroke',['width','0.254'],['type','default']],['fill',['type','background']]]]
-    u=['symbol',q("ESP32-DevKitC-38_1_1")]
-    for num,name,typ in ESP_PINS:
-        i=(num-1)%19; y=22.86-2.54*i
-        x,ang=(-17.78,0) if num<=19 else (17.78,180)
-        u.append(['pin',typ,'line',['at',f"{x}",f"{y}",str(ang)],['length','5.08'],['name',q(name),['effects',['font',['size','1.27','1.27']]]],['number',q(str(num)),['effects',['font',['size','1.27','1.27']]]]])
-    L+=[g,u]; return L
+def pin_key(num):
+    """Pad number to look a symbol pin up by in the part's pin->net map.
+
+    KiCad 10 writes a stack of identically-named pins as ONE pin numbered
+    "[1,15,38,39]" (the WROOM's four GND pads). The first member stands for
+    the stack; circuit.py lists every member in the map, so any would do.
+    """
+    s=str(num)
+    if s.startswith('['): s=s[1:].split(',')[0]
+    return int(s) if s.isdigit() else s
 
 def rot(px,py,r):
     c=math.cos(math.radians(r)); s=math.sin(math.radians(r)); return (px*c-py*s, px*s+py*c)
@@ -90,7 +83,7 @@ class Sch:
     def stub(s,cp,d,length=2.54):
         e=(cp[0]+d[0]*length,cp[1]+d[1]*length); s.wire(cp,e); return e
     def power(s,net,p,d):
-        """attach a power symbol (net in +5V/+3V3/+12V/GND) at point p with outward dir d"""
+        """attach a power symbol (net in +3V3/+12V/GND) at point p with outward dir d"""
         s.n+=1
         if net=="GND": r={(0,1):0,(0,-1):180,(-1,0):270,(1,0):90}[d]
         else: r={(0,-1):0,(0,1):180,(-1,0):90,(1,0):270}[d]
@@ -99,13 +92,14 @@ class Sch:
         s.n+=1; r={(0,-1):0,(0,1):180,(-1,0):90,(1,0):270}[d]
         s.place(f"#FLG{s.n:03d}","power","PWR_FLAG","PWR_FLAG","",p,r,val_off=(0,-3.0))
 
-POWER={"+5V","+3V3","+12V","GND"}
+POWER={"+3V3","+12V","GND"}
 def hook(s,pins,netmap,ncs=(),stub_len=5.08):
     """for each pin: wire stub + label or power symbol"""
     for num,(cp,d) in pins.items():
-        net=netmap.get(int(num)) if isinstance(list(netmap.keys())[0],int) else netmap.get(num)
+        k=pin_key(num)
+        net=netmap.get(k)
         if net is None:
-            if num in ncs or int(num) in ncs: s.nc(cp)
+            if k in ncs: s.nc(cp)
             continue
         e=s.stub(cp,d,stub_len)
         if net in POWER: s.power(net,e,d)
@@ -113,15 +107,16 @@ def hook(s,pins,netmap,ncs=(),stub_len=5.08):
 
 def place_part(s,ref,at,r=0,ncs=()):
     p=P[ref]; lib,name=SYM[p["sym"]]; fl,fn=FP[p["fp"]]
-    pins=s.place(ref,lib,name,p["value"],fl+":"+fn,at,r,extra_props={"LCSC":p["lcsc"],"Description":p["desc"]},dnp=p["dnp"],ref_off=(2.54 if name!="ESP32-DevKitC-38" else 0,-1.27))
+    pins=s.place(ref,lib,name,p["value"],fl+":"+fn,at,r,extra_props={"LCSC":p["lcsc"],"Description":p["desc"]},dnp=p["dnp"],ref_off=(2.54,-1.27))
     hook(s,pins,p["pins"],ncs)
 
 def build():
     s=Sch()
-    # every ESP32 pin we do not use, marked no-connect so ERC stays clean
+    # every module pin we do not use is marked no-connect so ERC stays clean
+    # (the symbol's own NC-type pins included -- a flag on those is harmless)
     NC=tuple(n for n,_,_ in ESP_PINS if n not in P["U1"]["pins"])
 
-    s.text("B-INFOHUB BRIDGE v1.0  --  Briggs & Stratton GC-1032 RS-485 bridge with InfoHub passthrough",(20,14),2.5)
+    s.text(f"B-INFOHUB BRIDGE v{REV}  --  Briggs & Stratton GC-1032 RS-485 bridge with InfoHub passthrough",(20,14),2.5)
 
     # ---- power input ----
     s.text("POWER IN: 12 V from the generator harness. Q1 reverse-polarity (carries the InfoHub",(20,26))
@@ -131,17 +126,17 @@ def build():
     place_part(s,"D2",(134,52),90); place_part(s,"C1",(156,52),0); place_part(s,"C2",(174,52),0)
     place_part(s,"F2",(196,45),0)
 
-    # ---- 5 V buck ----
-    s.text("5 V RAIL: AP63205WU-7 sync buck, 3.8-32 V in, fixed 5 V 2 A (from b-hydro carrier v2.1)",(20,74))
+    # ---- 3.3 V buck ----
+    s.text("3.3 V RAIL: AP63203WU-7 sync buck, 3.8-32 V in, fixed 3.3 V 2 A (circuit from b-hydro carrier v2.1).",(20,74))
+    s.text("Rev 1.1: one rail. The 5 V rail only fed the DevKit's linear 3.3 V regulator, which is gone.",(20,78))
     place_part(s,"U2",(70,96),0); place_part(s,"C3",(34,96),0); place_part(s,"R2",(34,124),0)
     place_part(s,"C4",(106,84),0); place_part(s,"L1",(112,104),0)
     place_part(s,"C5",(132,112),0); place_part(s,"C6",(152,112),0); place_part(s,"F1",(180,96),0)
-    place_part(s,"C7",(200,112),0); place_part(s,"C8",(220,112),0)
 
     s.text("power flags",(20,140))
-    # +12V_IH is a plain net (no stock power symbol) and +3V3 is driven by the
-    # ESP32 module's power_out pin, so neither needs a flag here.
-    for i,net in enumerate(["+12V","+5V","GND"]):
+    # +12V_IH / FAN_12V are plain nets (no stock power symbol). +3V3 comes off an
+    # inductor, so it has no power_out pin of its own and needs a flag.
+    for i,net in enumerate(["+12V","+3V3","GND"]):
         pt=(round((26+i*30)/1.27)*1.27,round(150/1.27)*1.27); s.power(net,pt,(0,-1)); s.flag(pt,(0,1))
 
     # ---- RS-485 port A: controller ----
@@ -152,37 +147,48 @@ def build():
 
     # ---- RS-485 port B: InfoHub ----
     s.text("PORT B -- INFOHUB PASSTHROUGH. We are Modbus SERVER here, impersonating the controller",(20,232))
-    s.text("at slave 10 so the InfoHub keeps working (ESPHome modbus role: server + modbus_server).",(20,236))
+    s.text("at slave 10 so the InfoHub keeps working. R10/R11 bias the idle pair (rev 1.1).",(20,236))
     place_part(s,"J3",(30,252),0); place_part(s,"U4",(82,252),0); place_part(s,"C10",(126,270),0)
     place_part(s,"D4",(30,278),0); place_part(s,"R4",(126,242),0); place_part(s,"JP2",(150,242),0)
+    place_part(s,"R10",(176,242),90); place_part(s,"R11",(176,270),90)
+
+    # ---- mounting ----
+    s.text("mounting",(20,288),1.5)
+    for i,h in enumerate(sorted(r for r in P if r.startswith("H"))):
+        place_part(s,h,(40+i*15,292),0)
 
     # ---- ESP32 ----
-    s.text("ESP32-DevKitC-38, socketed. Use the -32U variant for an external antenna.",(232,26))
-    s.text("No strapping pin (0/2/12/15) is used, so nothing here can stop it booting.",(232,30))
-    place_part(s,"U1",(290,110),0,ncs=NC)
+    s.text("ESP32-WROOM-32E soldered (rev 1.1; was a socketed DevKitC). Same pads take the -32UE",(232,26))
+    s.text("for a U.FL remote antenna. No strapping pin carries a function; IO0 is BOOT only.",(232,30))
+    place_part(s,"U1",(290,100),0,ncs=NC)
+
+    # ---- ESP support ----
+    s.text("EN/BOOT: 10k pull-ups, 1 uF on EN. SW1 RESET, SW2 BOOT (diagonal pads only -- see circuit.py).",(232,152))
+    s.text("J6 PROG: 3V3 GND TX RX EN IO0 -- first flash with any 3.3 V USB-serial adapter, OTA after that.",(232,156))
+    place_part(s,"R14",(250,168),0); place_part(s,"C11",(272,168),0); place_part(s,"SW1",(292,168),0)
+    place_part(s,"R15",(318,168),0); place_part(s,"SW2",(340,168),0)
+    place_part(s,"J6",(372,100),0)
+    place_part(s,"C7",(372,160),0); place_part(s,"C8",(392,160),0)
 
     # ---- status LEDs ----
     s.text("STATUS LEDS: PWR and TX need no GPIO -- TX is driven from DE, so it proves",(232,196))
-    s.text("the bridge is actually transmitting, not merely powered.",(232,200))
+    s.text("the bridge is actually transmitting, not merely powered. All on 3.3 V, 100R blue/green.",(232,200))
     for i,(r,d) in enumerate([("R5","D5"),("R6","D6"),("R7","D7"),("R8","D8"),("R9","D9")]):
         x=250+i*34
         place_part(s,r,(x,214),0); place_part(s,d,(x,236),90)
 
-    # ---- external LED header ----
-    s.text("EXTERNAL LED HEADER: the on-board LEDs are invisible inside a sealed box.",(232,252))
-    s.text("J4 carries the same anode nodes so panel LEDs can sit in parallel.",(232,256))
+    # ---- external LED header + fan ----
+    s.text("J4 EXT LED: the same anode nodes, for panel LEDs in parallel.  FAN (rev 1.1): 12 V via F3,",(232,252))
+    s.text("Q2 low-side PWM from IO32, D10 flyback, R13 holds the fan OFF while the ESP is in reset.",(232,256))
     place_part(s,"J4",(250,272),0)
-
-    # ---- mounting ----
-    s.text("mounting",(310,262),1.5)
-    for i,h in enumerate(sorted(r for r in P if r.startswith("H"))):
-        place_part(s,h,(318+i*15,272),0)
+    place_part(s,"J5",(290,272),0); place_part(s,"F3",(314,264),0); place_part(s,"D10",(334,272),90)
+    place_part(s,"Q2",(360,278),0); place_part(s,"R12",(382,268),0); place_part(s,"R13",(382,284),90)
     return s
 
 def write(path):
     s=build()
     root=['kicad_sch',['version','20250114'],['generator',q('binfohub_gen')],['generator_version',q('9.0')],['uuid',q(ROOT_UUID)],['paper',q('A3')],
-          ['title_block',['title',q('B-Infohub Bridge v1.0')],['date',q('2026-08-31')],['rev',q('1.0')],['company',q('b-infohub')]]]
+          ['title_block',['title',q(f'B-Infohub Bridge v{REV}')],['date',q('2026-10-01')],['rev',q(REV)],['company',q('b-infohub')]]]
     ls=['lib_symbols']+list(s.libsyms.values()); root.append(ls)
     root+=s.items
     root.append(['sheet_instances',['path',q('/'),['page',q('1')]]])

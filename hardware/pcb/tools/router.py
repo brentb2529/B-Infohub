@@ -26,7 +26,8 @@ class Router:
             for (hx,hy) in [(P[h]["pcb"][0],P[h]["pcb"][1]) for h in P if h.startswith("H")]:
                 m[(X-hx)**2+(Y-hy)**2 < 4.6**2]=-1
             m[(X<EDGE)|(X>BW-EDGE)|(Y<EDGE)|(Y>BH-EDGE)]=-1
-            ax0,ax1,ay0,ay1=ESP_C[0]-27.5,ESP_C[0]-19.0,ESP_C[1]-11.2,ESP_C[1]+11.2
+            # antenna region in front of the module: no tracks, no vias (circuit.ANT_KEEPOUT)
+            ax0,ax1,ay0,ay1=ANT_KEEPOUT
             m[(X>=ax0)&(X<=ax1)&(Y>=ay0)&(Y<=ay1)]=-1
         s.X,s.Y=X,Y
         for pd in s.pads: s.raster_pad(pd)
@@ -174,7 +175,7 @@ class Router:
     def run(s,first=()):
         names=[n for n in s.N if len(s.N[n])>1]
         # order: 12V first (wide), 5V, then signals, GND last; nets that failed in a previous pass go first
-        pri={"12V":0,"5V":1,"RS485":2,"Default":3,"GND":4}   # RS485 pairs routed early: keep A/B short and together
+        pri={"12V":0,"3V3":1,"RS485":2,"Default":3,"GND":4}   # RS485 pairs routed early: keep A/B short and together
         names.sort(key=lambda n:(n not in first,pri[netclass(n)],-len(s.N[n])))
         fails=0; s.failed=[]
         for n in names:
@@ -192,18 +193,74 @@ def route_all(max_passes=6):
         first=r.failed+[n for n in first if n not in r.failed]
     return r
 
+def trim_dangling(tracks, vias, pads):
+    """Drop track ends that connect to nothing.
+
+    Hand-routed escape stubs (circuit.PRE) are longer than the router needs more
+    often than not, and the router joins them on a grid cell that can sit up to
+    half a track width off the stub's centreline. So: a segment end counts as
+    anchored if it is inside a pad of its net, on a via, shares a point with
+    another segment, or lies within another same-layer same-net segment's body.
+    Anything else is a free end, and a segment with a free end goes -- repeated
+    until nothing changes. Pad containment is generous (the larger pad dimension
+    in both axes) so a rotated pad can never be mis-sized; the cost is the odd
+    cosmetic stub beside a pad, against the alternative of cutting a connection.
+    """
+    viapts={(round(v[0],3),round(v[1],3)) for v in vias}
+    def inside_pad(x,y,net):
+        for p in pads:
+            if p["net"]!=net: continue
+            h=max(p["w"],p["h"])/2+0.05
+            if abs(x-p["x"])<=h and abs(y-p["y"])<=h: return True
+        return False
+    def on_body(x,y,lay,net,me,segs):
+        for t in segs:
+            if t is me or t[5]!=lay or t[6]!=net: continue
+            x1,y1,x2,y2,w=t[0],t[1],t[2],t[3],t[4]; L2=(x2-x1)**2+(y2-y1)**2
+            if L2<1e-9: continue
+            u=max(0.0,min(1.0,((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/L2))
+            if math.hypot(x-(x1+(x2-x1)*u), y-(y1+(y2-y1)*u)) <= w/2+0.05: return True
+        return False
+    def dist_to_seg(x,y,t):
+        x1,y1,x2,y2=t[0],t[1],t[2],t[3]; L2=(x2-x1)**2+(y2-y1)**2
+        if L2<1e-9: return math.hypot(x-x1,y-y1)
+        u=max(0.0,min(1.0,((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/L2))
+        return math.hypot(x-(x1+(x2-x1)*u), y-(y1+(y2-y1)*u))
+    def body_has_anchor(t,segs):
+        # a via, or another segment's end, sitting on this segment's body: the
+        # router joined here part-way along, so the segment must stay whole
+        for v in vias:
+            if v[2]==t[6] and dist_to_seg(v[0],v[1],t)<=t[4]/2+VIA_D/2: return True
+        for o in segs:
+            if o is t: continue
+            for (x,y) in ((o[0],o[1]),(o[2],o[3])):
+                if dist_to_seg(x,y,t)<=t[4]/2+0.05 and min(math.hypot(x-t[0],y-t[1]),math.hypot(x-t[2],y-t[3]))>0.01: return True
+        return False
+    tracks=list(tracks)
+    while True:
+        bynet={}
+        for t in tracks: bynet.setdefault((t[5],t[6]),[]).append(t)
+        keep=[]
+        for t in tracks:
+            segs=bynet[(t[5],t[6])]; ok=True
+            for (x,y) in ((t[0],t[1]),(t[2],t[3])):
+                if (round(x,3),round(y,3)) in viapts or inside_pad(x,y,t[6]) or on_body(x,y,t[5],t[6],t,segs): continue
+                ok=False; break
+            if ok or body_has_anchor(t,segs): keep.append(t)
+        if len(keep)==len(tracks): return tracks
+        tracks=keep
+
 if __name__=="__main__":
-    import sexp, pickle
-    r=route_all(); fails=len(r.failed)
-    # drop tiny stubs with a free end (router artefacts at via/pad boundaries)
-    ends={}
-    for t in r.tracks:
-        for e in ((round(t[0],3),round(t[1],3)),(round(t[2],3),round(t[3],3))): ends[e]=ends.get(e,0)+1
-    for v in r.vias: ends[(round(v[0],3),round(v[1],3))]=ends.get((round(v[0],3),round(v[1],3)),0)+1
-    padpts={(round(p["x"],3),round(p["y"],3)) for p in r.pads}
-    def free(e): return ends.get(e,0)<=1 and not any(abs(e[0]-q[0])<0.9 and abs(e[1]-q[1])<0.9 for q in padpts)
-    keep=[t for t in r.tracks if not (math.hypot(t[2]-t[0],t[3]-t[1])<0.3 and (free((round(t[0],3),round(t[1],3))) or free((round(t[2],3),round(t[3],3)))))]
-    print("stub cleanup removed",len(r.tracks)-len(keep)); r.tracks=keep
-    print("TOTAL FAILS",fails,"tracks",len(r.tracks),"vias",len(r.vias))
-    pickle.dump((r.tracks,r.vias),open("routes.pkl","wb"))
-    open("../"+PROJECT+".kicad_pcb","w").write(sexp.dump(gen_pcb.build(r.tracks,r.vias))+"\n"); gen_pcb.write_pro("../"+PROJECT+".kicad_pro")
+    import sexp, pickle, sys
+    if "--trim-only" in sys.argv:
+        # re-trim a saved raw route without re-routing (seconds, not minutes)
+        tracks,vias=pickle.load(open("routes_raw.pkl","rb")); fails=0
+        pads=[p for ref in P for p in gen_pcb.pad_geoms(ref)]
+    else:
+        r=route_all(); fails=len(r.failed); tracks,vias,pads=r.tracks,r.vias,r.pads
+        pickle.dump((tracks,vias),open("routes_raw.pkl","wb"))
+    trimmed=trim_dangling(tracks,vias,pads)
+    print("dangling-end trim removed",len(tracks)-len(trimmed),"segments; now",len(trimmed))
+    print("TOTAL FAILS",fails,"tracks",len(trimmed),"vias",len(vias))
+    pickle.dump((trimmed,vias),open("routes.pkl","wb"))
+    open("../"+PROJECT+".kicad_pcb","w").write(sexp.dump(gen_pcb.build(trimmed,vias))+"\n"); gen_pcb.write_pro("../"+PROJECT+".kicad_pro")

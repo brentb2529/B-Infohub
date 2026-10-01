@@ -1,0 +1,143 @@
+(footprint "SW_TS-1187A"
+	(version 20241229)
+	(generator "binfohub_gen")
+	(layer "F.Cu")
+	(descr "XKB TS-1187A-B-A-B 5.1x5.1 mm SMD tactile switch; pads 1/2 are the diagonal pair used, 3/4 unassigned")
+	(tags "tactile switch SMD")
+	(attr smd)
+	(property "Reference" "REF**"
+		(at 0 -4.2 0)
+		(layer "F.SilkS")
+		(uuid "8ebfc6cb-310c-51f0-a7c7-794d74d776d2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "SW_TS-1187A"
+		(at 0 4.2 0)
+		(layer "F.Fab")
+		(uuid "d8b8a44b-e01b-5f24-ac16-a12fb2b4fd5a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "20ebdee3-d246-5cac-b7bb-05e10b47c8c5")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(hide yes)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "58aba175-0716-5a73-b7c0-3a442042181d")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(hide yes)
+		)
+	)
+	(fp_rect
+		(start -2.55 -2.55)
+		(end 2.55 2.55)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "c0352967-eca8-543f-a284-62403a974637")
+	)
+	(fp_rect
+		(start -4.3 -3.0)
+		(end 4.3 3.0)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "5cf67dab-9030-56d8-af54-2a36d3a42c14")
+	)
+	(fp_line
+		(start -2.2 -2.55)
+		(end 2.2 -2.55)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "eba4ccd4-8c8d-5307-b85b-82b578e7dc01")
+	)
+	(fp_line
+		(start -2.2 2.55)
+		(end 2.2 2.55)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "482de334-440d-5b1f-9b06-892a760d1235")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 1.5 0)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "82e7a452-15b5-57ea-a36e-439855ec5c97")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "0c9eae13-091e-536d-9726-3a225a54825d")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -3.25 -1.85)
+		(size 1.5 1.0)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "18c8ee9b-6ef0-57af-9e08-ca10c233389d")
+	)
+	(pad "2" smd rect
+		(at 3.25 1.85)
+		(size 1.5 1.0)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "2c118645-7581-5d82-8d57-7733299fedf4")
+	)
+	(pad "3" smd rect
+		(at 3.25 -1.85)
+		(size 1.5 1.0)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "e675a226-be43-5edb-ac36-3a2ef8fa6174")
+	)
+	(pad "4" smd rect
+		(at -3.25 1.85)
+		(size 1.5 1.0)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "8ec1e7f4-7ce5-5ce6-a90c-b57b13de10bd")
+	)
+	(embedded_fonts no)
+)

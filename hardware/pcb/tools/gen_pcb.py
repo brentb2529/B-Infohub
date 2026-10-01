@@ -142,7 +142,7 @@ def silkscreen():
     # ---------- FRONT: wiring only ----------
     # Title sits along the bottom edge: the middle of the board is the ESP32
     # module, whose footprint carries its own pin-name silk.
-    silk("B-INFOHUB BRIDGE v1.0", 45, 89.8, 0, 1.0)
+    silk(f"B-INFOHUB BRIDGE v{REV}", 45, 89.8, 0, 1.0)
 
     # Terminal labels sit BELOW each block, clear of its footprint outline.
     # Polarity is marked per pad rather than as a floating +/- pair.
@@ -163,18 +163,36 @@ def silkscreen():
         silk(lab, x, 84.0, 0, 0.8)
         silk(col, x, 86.2, 0, 0.65)
 
-    # J4 pin 1 (GND) is at the TOP (y=54) and pin 6 (TX) at the bottom (y=66.7).
-    # Text rotated 90 deg renders FIRST character at the BOTTOM, so the legend has to
-    # be written in reverse pin order to line up. Written forwards it reads
+    # J4 pin 1 (GND) is at the TOP and pin 6 (TX) at the bottom. Text rotated
+    # 90 deg renders FIRST character at the BOTTOM, so the legend has to be
+    # written in reverse pin order to line up. Written forwards it reads
     # G-P-W-B-F-T bottom-to-top and points every wire at the wrong pin.
-    silk("J4 EXT LED", 80.4, 60.0, 90, 0.7)
+    # J4 and J6 sit side by side on the left edge: J4's legend goes on its
+    # outboard (left) side, J6's on its right, so nothing lands between them.
+    jx,jy,_=P["J4"]["pcb"]
+    silk("J4 EXT LED", jx-3.0, jy+6.0, 90, 0.7)
     header_pin_labels("J4", ["G", "P", "W", "B", "F", "T"], dx=-2.2)
-    silk("1", 82.2, 51.9, 0, 0.8)
+    silk("1", jx+1.4, jy-2.1, 0, 0.8)
+
+    # J6 programming header: pin 1 (3V3) at the top.
+    px,py,_=P["J6"]["pcb"]
+    silk("J6 PROG", px-3.0, py+6.0, 90, 0.7)
+    header_pin_labels("J6", ["3V3", "GND", "TX", "RX", "EN", "IO0"], dx=+2.4, size=0.62)
+    silk("1", px+1.4, py-2.1, 0, 0.8)
+
+    silk("RESET", P["SW1"]["pcb"][0], 46.3, 0, 0.62)
+    silk("BOOT", P["SW2"]["pcb"][0], 46.3, 0, 0.62)
+
+    # J5 fan: labels above the block (its wire openings face -y), one per pad
+    silk("J5 FAN", 33.6, 36.4, 0, 0.7)
+    term_pin_labels("J5", ["12V", "SW"], dy=-6.0, size=0.62)
+
+    silk("ANT >", 76.0, 62.0, 0, 0.8)
 
     # ---------- BACK: everything else ----------
-    silk("B-INFOHUB BRIDGE  v1.0", 45, 12, 0, 2.4, B)
+    silk(f"B-INFOHUB BRIDGE  v{REV}", 45, 12, 0, 2.4, B)
     silk("Briggs & Stratton GC-1032 -> Home Assistant", 45, 17, 0, 1.1, B)
-    silk("2026-08  bbensten", 45, 21, 0, 0.9, B)
+    silk("2026-10  bbensten", 45, 21, 0, 0.9, B)
 
     silk("CONTROLLER: SLAVE 10   9600 8E1", 45, 30, 0, 1.3, B)
     silk("measured on the unit, NOT the genmon default of 1 / 19200", 45, 34, 0, 0.8, B)
@@ -183,14 +201,15 @@ def silkscreen():
     silk("J2  to ABC controller: A and B only (harness GND lands on J1).", 45, 46, 0, 0.8, B)
     silk("     Swap A/B if the bus stays silent - it cannot damage anything.", 45, 50, 0, 0.8, B)
     silk("J3  to InfoHub: +12V (fused by F2, 2A), GND, A, B", 45, 54, 0, 0.8, B)
-    silk("F1 1.1A feeds the bridge, F2 2A feeds the InfoHub - separate on purpose:", 45, 58, 0, 0.8, B)
-    silk("the InfoHub cell modem pulses hard and must not take the telemetry down.", 45, 62, 0, 0.8, B)
+    silk("F1 1.1A feeds the bridge, F2 2A the InfoHub, F3 0.5A the fan - separate", 45, 58, 0, 0.8, B)
+    silk("on purpose: no single fault takes the telemetry down.", 45, 62, 0, 0.8, B)
 
-    silk("PORT A (U3) controller  IO17 DI / IO16 RO / IO4 DE+RE", 45, 72, 0, 0.8, B)
-    silk("PORT B (U4) InfoHub     IO22 DI / IO23 RO / IO21 DE+RE", 45, 76, 0, 0.8, B)
-    silk("JP1/JP2 = 120R termination. LEAVE OFF unless you see CRC errors:", 45, 81, 0, 0.8, B)
-    silk("9600 baud proved reliable UNTERMINATED, 368/368 reads, 2026-08-31.", 45, 85, 0, 0.8, B)
-    silk("ESP32-DevKitC-32, or -32U if you need an external antenna", 45, 89, 0, 0.8, B)
+    silk("PORT A (U3) controller  IO17 DI / IO16 RO / IO4 DE+RE", 45, 70, 0, 0.8, B)
+    silk("PORT B (U4) InfoHub     IO22 DI / IO23 RO / IO21 DE+RE", 45, 74, 0, 0.8, B)
+    silk("JP1/JP2 = 120R termination. LEAVE OFF unless you see CRC errors:", 45, 78, 0, 0.8, B)
+    silk("9600 baud proved reliable UNTERMINATED, 368/368 reads, 2026-08-31.", 45, 82, 0, 0.8, B)
+    silk("ESP32-WROOM-32E. Fit -32UE + U.FL pigtail for a remote antenna.", 45, 86, 0, 0.8, B)
+    silk("J5 FAN 12V 0.5A PWM (IO32).  J6 PROG: first flash only, then OTA.", 45, 89.5, 0, 0.8, B)
 
 def gr_text(t,x,y,r,s,layer):
     return ['gr_text',q(t),['at',f"{x}",f"{y}",f"{r}"],['layer',q(layer)],['uuid',q(uid('gt',t,x,y,layer))],['effects',['font',['size',str(s),str(s)],['thickness',str(round(s*0.15,3))]],['justify','mirror'] if layer.startswith('B.') else ['justify']]]
@@ -203,7 +222,7 @@ def board_nets():
 def build(tracks=None, vias=None):
     N,netidx=board_nets()
     b=['kicad_pcb',['version','20241229'],['generator',q('bhydro_gen')],['generator_version',q('9.0')],['general',['thickness','1.6'],['legacy_teardrops','no']],['paper',q('A4')],
-       ['title_block',['title',q('b-hydro carrier v2.1')],['date',q('2026-08-25')],['rev',q('2.1')]],
+       ['title_block',['title',q(f'B-Infohub Bridge v{REV}')],['date',q('2026-10-01')],['rev',q(REV)]],
        ['layers',['0',q('F.Cu'),'signal'],['2',q('B.Cu'),'signal'],['9',q('F.Adhes'),'user',q('F.Adhesive')],['11',q('B.Adhes'),'user',q('B.Adhesive')],['13',q('F.Paste'),'user'],['15',q('B.Paste'),'user'],['5',q('F.SilkS'),'user',q('F.Silkscreen')],['7',q('B.SilkS'),'user',q('B.Silkscreen')],['1',q('F.Mask'),'user'],['3',q('B.Mask'),'user'],['17',q('Dwgs.User'),'user',q('User.Drawings')],['19',q('Cmts.User'),'user',q('User.Comments')],['21',q('Eco1.User'),'user',q('User.Eco1')],['23',q('Eco2.User'),'user',q('User.Eco2')],['25',q('Edge.Cuts'),'user'],['27',q('Margin'),'user'],['31',q('F.CrtYd'),'user',q('F.Courtyard')],['29',q('B.CrtYd'),'user',q('B.Courtyard')],['35',q('F.Fab'),'user'],['33',q('B.Fab'),'user']],
        ['setup',['pad_to_mask_clearance','0'],['allow_soldermask_bridges_in_footprints','no'],['tenting','front','back'],
          ['pcbplotparams',['layerselection','0x00000000_00000000_55555555_5755555f'],['plot_on_all_layers_selection','0x00000000_00000000_00000000_00000000'],['disableapertmacros','no'],['usegerberextensions','yes'],['usegerberattributes','yes'],['usegerberadvancedattributes','yes'],['creategerberjobfile','yes'],['dashed_line_dash_ratio','12.000000'],['dashed_line_gap_ratio','3.000000'],['svgprecision','4'],['plotframeref','no'],['mode','1'],['useauxorigin','no'],['hpglpennumber','1'],['hpglpenspeed','20'],['hpglpendiameter','15.000000'],['pdf_front_fp_property_popups','yes'],['pdf_back_fp_property_popups','yes'],['pdf_metadata','yes'],['pdf_single_document','no'],['dxfpolygonmode','yes'],['dxfimperialunits','yes'],['dxfusepcbnewfont','yes'],['psnegative','no'],['psa4output','no'],['plot_black_and_white','yes'],['sketchpadsonfab','no'],['plotpadnumbers','no'],['hidednponfab','no'],['sketchdnponfab','yes'],['crossoutdnponfab','yes'],['subtractmaskfromsilk','no'],['outputformat','1'],['mirror','no'],['drillshape','0'],['scaleselection','1'],['outputdirectory',q('gerbers/')]]]]
@@ -230,18 +249,16 @@ def build(tracks=None, vias=None):
                   ['connect_pads',['clearance','0.3']],['min_thickness','0.25'],['filled_areas_thickness','no'],
                   ['fill','yes',['thermal_gap','0.4'],['thermal_bridge_width','0.5'],['island_removal_mode','0'],['island_area_min','10']],
                   ['polygon',['pts',['xy','0.5','0.5'],['xy',f"{BW-0.5}",'0.5'],['xy',f"{BW-0.5}",f"{BH-0.5}"],['xy','0.5',f"{BH-0.5}"]]]])
-    # antenna keep-out under the module's antenna end (x 34..44 between the header rows)
-    ax0,ax1,ay0,ay1=ESP_C[0]-27.5,ESP_C[0]-19.0,ESP_C[1]-11.2,ESP_C[1]+11.2
-    b.append(['zone',['net','0'],['net_name',q('')],['layers',q('F&B.Cu')],['uuid',q(uid('keepout'))],['name',q('ANT_KEEPOUT')],['hatch','full','0.5'],
-              ['keepout',['tracks','not_allowed'],['vias','not_allowed'],['pads','allowed'],['copperpour','not_allowed'],['footprints','allowed']],
-              ['fill'],['polygon',['pts',['xy',f"{ax0}",f"{ay0}"],['xy',f"{ax1}",f"{ay0}"],['xy',f"{ax1}",f"{ay1}"],['xy',f"{ax0}",f"{ay1}"]]]])
+    # Antenna keepout: rev 1.1 relies on the module footprint's own copper
+    # keepout zone (KiCad's WROOM footprint carries it; gen_libs.py narrows it).
+    # The router reads the same region from circuit.ANT_KEEPOUT.
     b.append(['embedded_fonts','no'])
     return b
 
 def write_pro(path):
     classes=[{"name":"Default","clearance":0.25,"track_width":0.3,"via_diameter":0.8,"via_drill":0.4,"diff_pair_gap":0.25,"diff_pair_via_gap":0.25,"diff_pair_width":0.2,"microvia_diameter":0.3,"microvia_drill":0.1,"bus_width":12,"wire_width":6,"line_style":0,"pcb_color":"rgba(0, 0, 0, 0.000)","schematic_color":"rgba(0, 0, 0, 0.000)","priority":2147483647},
              {"name":"12V","clearance":0.25,"track_width":1.0,"via_diameter":0.8,"via_drill":0.4,"pcb_color":"rgba(255, 64, 64, 0.8)","schematic_color":"rgba(200, 0, 0, 1)","priority":0},
-             {"name":"5V","clearance":0.25,"track_width":0.8,"via_diameter":0.8,"via_drill":0.4,"pcb_color":"rgba(255, 160, 0, 0.8)","schematic_color":"rgba(200,100,0,1)","priority":1},
+             {"name":"3V3","clearance":0.25,"track_width":0.8,"via_diameter":0.8,"via_drill":0.4,"pcb_color":"rgba(255, 160, 0, 0.8)","schematic_color":"rgba(200,100,0,1)","priority":1},
              {"name":"GND","clearance":0.25,"track_width":0.5,"via_diameter":0.8,"via_drill":0.4,"pcb_color":"rgba(0, 160, 255, 0.8)","schematic_color":"rgba(0,80,200,1)","priority":2}]
     N=nets(); assign=[{"netclass":netclass(n),"pattern":n} for n in sorted(N) if netclass(n)!="Default"]
     pro={"board":{"3dviewports":[],"design_settings":{"defaults":{"board_outline_line_width":0.1,"copper_line_width":0.2,"silk_line_width":0.15,"silk_text_size_h":1.0,"silk_text_size_v":1.0,"silk_text_thickness":0.15},

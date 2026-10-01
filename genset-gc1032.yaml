@@ -117,6 +117,9 @@ packages:
   # makes it inert until the hardware exists. See the header in that file for
   # why it is NOT on IO0.
   reset_btn:   !include packages/reset-button.yaml
+  # Enclosure fan on J5 (IO32 PWM) -- REV 1.1 BOARDS ONLY. Uncomment on a rev
+  # 1.1 build; costs two entities of heap, so it stays out of rev 1.0 images.
+  # fan:         !include packages/fan.yaml
   # Exercise observation + history. NOT schedule setting -- the controller
   # exposes no such register; see the header in that file.
   exercise:    !include packages/exercise.yaml
