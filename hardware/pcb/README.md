@@ -14,7 +14,8 @@
 
 | Change | Why |
 | --- | --- |
-| **ESP32-WROOM-32E soldered**, replacing the socketed DevKitC | Heat. The fielded unit's die ran 125–135 °F at night and 188 °F in afternoon sun, and at 188 °F the controller link dropped a byte per reply (see *Heat*). The DevKit's AMS1117 (5→3.3 V linear, ~0.3 W inside the module footprint) is gone; the module sits on a via-stitched ground pad. |
+| **ESP32-WROOM-32E-H4 soldered**, replacing the socketed DevKitC | Heat. The fielded unit's die ran 125–135 °F at night and 188 °F in afternoon sun, and at 188 °F the controller link dropped a byte per reply (see *Heat*). The -H4 is the −40…+105 °C grade (the plain -32E is rated to 85 °C — the temperature this board has already reached). The DevKit's AMS1117 (5→3.3 V linear, ~0.3 W inside the module footprint) is gone; the module sits on a via-stitched ground pad. |
+| **DE pull-downs** (R16/R17, EE review) | The SP3485's DE input has no pull-down and the ESP's GPIOs float from reset until the firmware runs — and for the whole of a J6 first flash. 10 k on each DE keeps both transceivers in receive, so the board can never drive the generator's bus uncommanded. Rev 1.0 is fielded without them. |
 | **Single 3.3 V rail** from an AP63203 | The 5 V rail only ever fed that LDO and the PWR LED. Same buck family, pinout and application circuit as the AP63205 it replaces. |
 | **Remote-antenna option**: the same pads take the **-32UE** (U.FL) | Antenna end faces the board edge, so only the enclosure wall is in front of it. Order -32E for the internal antenna; -32UE plus a U.FL→SMA bulkhead pigtail if the box is metal or the signal is poor. |
 | **J5 fan header**, 12 V PWM (IO32 → AO3400A), 0.5 A polyfuse, SS14 flyback | Only if shading and venting the enclosure are not enough. Firmware `packages/fan.yaml` runs it from the die temperature, Home Assistant or not. |
@@ -30,14 +31,23 @@ working as out-of-band backup during an outage.
 | --- | --- |
 | `kicad-cli sch erc --severity-all` | **0 violations** (`binfohub_bridge-erc.rpt`) |
 | `kicad-cli pcb drc --severity-all --refill-zones --schematic-parity` | **0 errors, 0 unconnected, 0 parity issues** |
-| Routing | **100 %**, 0.25 mm-grid A* router, 755 tracks / 104 vias, GND pour both layers **plotted into the gerbers** (see below) |
-| LCSC | **35 distinct parts** (37 BOM lines); the 9 parts new in rev 1.1 verified in stock on 2026-10-01, the rest last checked 2026-08-31 |
+| Routing | **100 %**, 0.25 mm-grid A* router, 738 tracks / 109 vias, GND pour both layers **plotted into the gerbers** (see below) |
+| LCSC | **36 distinct parts**, one BOM line each; the 11 parts new or changed in rev 1.1 verified in stock on 2026-10-01, the rest last checked 2026-08-31 |
 
-Remaining DRC output is 7 warnings: 4 are 1.9–2.1 mm dangling tails on hand-routed
-escape stubs the router joined part-way along (`BUS_A`, `IH_B`, `ESP_EN`,
-`LED_FAULT` — all low-speed lines, electrically meaningless), and 3 are the
-`lib_footprint_mismatch` on J2/J3/J5 from stripping the terminal blocks' locating
-pegs (deliberate, see ORDER.md). **No silk over any pad, no courtyard overlaps.**
+Remaining DRC output is a handful of warnings: short dangling tails on hand-routed
+escape stubs the router joined part-way along (low-speed lines, verified
+electrically meaningless in the EE review), and `lib_footprint_mismatch` on the
+terminal blocks (locating pegs deliberately stripped, see ORDER.md) and on U1
+(the project copy of the WROOM footprint, identical to the library on every
+pad, via and keepout). **No silk over any pad, no courtyard overlaps.** The exact
+counts are in `binfohub_bridge-drc.rpt`.
+
+**EE review (2026-10-01):** independent pre-fab review of the full source; verdict
+*green after fixes*, all applied — -H4 module, DE pull-downs, 680 Ω bias, 1.1 A fan
+fuse, 100 nF moved to the VDD pad, BOM grouping by part, JLC gerber layer set.
+Confirmed clean: every pin against the firmware map, no strapping pins, EN/IO0
+reference circuit, buck pinout and FB, D10/Q2 polarity, SM712 pin order, pour
+present in the gerbers, antenna keepout honoured.
 
 > **Rev 1.0's shipped gerbers had no ground pour.** `gen_pcb.py` writes zone
 > outlines only, and the rev 1.0 plot never refilled them: the F_Cu gerber in git
@@ -54,11 +64,11 @@ previews.
 | Block | Parts |
 | --- | --- |
 | **Power in** | J1 screw terminal, AO3401A reverse-polarity P-FET (4 A — carries the InfoHub too), **SMBJ16A TVS**, 100 µF bulk |
-| **3.3 V rail** | AP63203WU-7 sync buck, 3.8–32 V in, fixed 3.3 V 2 A + 10 µH shielded inductor, 1.1 A polyfuse — application circuit from b-hydro carrier v2.1 |
+| **3.3 V rail** | AP63203WU-7 sync buck, 3.8–32 V in, fixed 3.3 V 2 A + 10 µH shielded inductor (the b-hydro / rev 1.0 circuit; the datasheet's 3.3 V example is 4.7 µH, 10 µH is the conservative side), 1.1 A polyfuse |
 | **InfoHub 12 V** | Separate 2 A polyfuse (F2) |
-| **Fan 12 V** | J5, separate 0.5 A polyfuse (F3), AO3400A low-side PWM switch, SS14 flyback |
-| **RS-485 × 2** | SP3485EN transceivers, PSM712 TVS per pair, 120 Ω termination on jumpers (ship OPEN — see below); fail-safe bias R10/R11 on the InfoHub pair |
-| **MCU** | ESP32-WROOM-32E soldered (or -32UE for U.FL), 10 k/1 µF on EN, RESET and BOOT buttons, J6 programming header |
+| **Fan 12 V** | J5, separate 1.1 A / 33 V polyfuse (F3 — a PPTC derates ~40 % at box temperature, so 0.5 A would nuisance-trip), AO3400A low-side PWM switch, SS14 flyback |
+| **RS-485 × 2** | SP3485EN transceivers, PSM712 TVS per pair, 120 Ω termination on jumpers (ship OPEN — see below); 680 Ω fail-safe bias R10/R11 on the InfoHub pair; 10 k pull-downs on both DE lines so neither transceiver can drive while the ESP is in reset or being flashed |
+| **MCU** | ESP32-WROOM-32E**-H4** (−40…+105 °C grade) soldered, or -32UE for U.FL; 10 k/1 µF on EN, RESET and BOOT buttons, J6 programming header |
 | **Indicators** | 5 LEDs (PWR / WIFI / BUS / FAULT / TX) sized for light pipes, plus J4 header |
 
 ### Why the power section is split into two fuses

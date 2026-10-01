@@ -12,23 +12,34 @@ from circuit import *
 # Rev 1.1 NEW packages, NOT yet verified in the JLC viewer -- check pin 1 / the antenna end before
 # confirming the order: ESPW (WROOM module, antenna must point to the board edge, +x), SW4 (TS-1187A,
 # symmetric so rotation is harmless), SMA (SS14 cathode band toward F3/+12 V).
-ROT_FIX={"SOT":180,"TSOT6":270,"PH4":90,"PH3":90,"CPSMD":180,"ESPW":0,"SW4":0,"SMA":0}   # PHX4/PHX8 (KF128 2.54 terminals): verified 0 in the JLC viewer
+# This project's pin headers are PH2 (JP1/JP2) and PH6 (J4/J6); b-hydro's were PH3/PH4.
+# The "1xN pin headers need 90" finding was made on b-hydro's headers, and the
+# package family is the same, so the rule is applied to ours -- but it has NOT
+# been seen in the JLC viewer for these two footprints. Check J4/J6/JP1/JP2 in
+# the placement preview, or hand-solder the THT (ORDER.md offers both).
+ROT_FIX={"SOT":180,"TSOT6":270,"PH2":90,"PH6":90,"CPSMD":180,"ESPW":0,"SW4":0,"SMA":0}   # PHX/XH2/XH4 (KF128 terminals): verified 0 in the JLC viewer
 rows={}
 descs={}
+vals={}
 for ref,p in sorted(P.items(), key=lambda kv:(kv[0][0],int(''.join(c for c in kv[0][1:] if c.isdigit()) or 0))):
     if ref.startswith("H"): continue
-    # Group by VALUE + FOOTPRINT + LCSC only. The description must NOT be part of the
-    # key: five identical 100 nF caps with five different per-net comments would
-    # otherwise become five BOM lines, and JLC flags that as "multiple lines matched to
-    # the same part" and deselects the duplicates. Caught in the JLC BOM review,
-    # 2026-08-31.
-    key=(p["value"],FP[p["fp"]][1],"" if p["dnp"] else p["lcsc"])
+    # Group by FOOTPRINT + LCSC only. Neither the description nor the VALUE may be
+    # part of the key: five identical 100 nF caps with five different per-net
+    # comments, or two identical terminal blocks whose values are their silk
+    # labels (J2 "BUS A B" / J5 "FAN 12V"), would otherwise become separate BOM
+    # lines for one part, and JLC flags that as "multiple lines matched to the
+    # same part" and deselects the duplicates. Caught in the JLC BOM review on
+    # 2026-08-31 (descriptions) and in the rev 1.1 EE review (values).
+    key=(FP[p["fp"]][1],"" if p["dnp"] else p["lcsc"])
     rows.setdefault(key,[]).append(ref)
     descs.setdefault(key,[]).append(p["desc"])
+    vals.setdefault(key,[]).append(p["value"])
 with open("../bom_jlc.csv","w",newline="") as f:
     w=csv.writer(f); w.writerow(["Comment","Designator","Footprint","LCSC Part #","Qty","Assembly","Note","Description"])
     for key,refs in rows.items():
-        val,fp,lcsc = key
+        fp,lcsc = key
+        # one Comment per line: the first value, plus the others if they differ
+        uv=list(dict.fromkeys(vals[key])); val=uv[0] if len(uv)==1 else uv[0]+" ("+", ".join(uv[1:])+")"
         # keep the longest description: it is the one carrying the reasoning
         desc = max(descs[key], key=len)
         asm="DNP" if not lcsc else ("JLC THT (economic, hand-solder fee)" if any(P[r]["hand"] for r in refs) else "JLC SMT")

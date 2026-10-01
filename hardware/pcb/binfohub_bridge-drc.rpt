@@ -1,17 +1,14 @@
 ** Drc report for binfohub_bridge.kicad_pcb **
-** Created on 2026-10-01T16:28:29 **
+** Created on 2026-10-01T17:17:46 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 7 DRC violations **
+** Found 6 DRC violations **
 [track_dangling]: Track has unconnected end
     Local override; warning
-    @(54.4750 mm, 27.6350 mm): Track [BUS_A] on F.Cu, length 2.1250 mm
+    @(49.5250 mm, 28.9050 mm): Track [A_DI] on F.Cu, length 1.6950 mm
 [track_dangling]: Track has unconnected end
     Local override; warning
     @(74.4750 mm, 26.3650 mm): Track [IH_B] on F.Cu, length 2.1250 mm
-[track_dangling]: Track has unconnected end
-    Local override; warning
-    @(68.7200 mm, 53.2500 mm): Track [ESP_EN] on F.Cu, length 1.8500 mm
 [track_dangling]: Track has unconnected end
     Local override; warning
     @(57.2900 mm, 53.2500 mm): Track [LED_FAULT] on F.Cu, length 1.8500 mm

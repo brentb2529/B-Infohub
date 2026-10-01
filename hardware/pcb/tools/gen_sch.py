@@ -144,6 +144,7 @@ def build():
     s.text("RE and DE tied: one GPIO (IO4) drives direction. JP1 fits the 120R terminator.",(20,170))
     place_part(s,"J2",(30,186),0); place_part(s,"U3",(82,186),0); place_part(s,"C9",(126,204),0)
     place_part(s,"D3",(30,212),0); place_part(s,"R3",(126,176),0); place_part(s,"JP1",(150,176),0)
+    place_part(s,"R16",(176,204),90)
 
     # ---- RS-485 port B: InfoHub ----
     s.text("PORT B -- INFOHUB PASSTHROUGH. We are Modbus SERVER here, impersonating the controller",(20,232))
@@ -151,6 +152,7 @@ def build():
     place_part(s,"J3",(30,252),0); place_part(s,"U4",(82,252),0); place_part(s,"C10",(126,270),0)
     place_part(s,"D4",(30,278),0); place_part(s,"R4",(126,242),0); place_part(s,"JP2",(150,242),0)
     place_part(s,"R10",(176,242),90); place_part(s,"R11",(176,270),90)
+    place_part(s,"R17",(198,270),90)
 
     # ---- mounting ----
     s.text("mounting",(20,288),1.5)

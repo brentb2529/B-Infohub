@@ -19,17 +19,18 @@ rm -rf gerbers && mkdir gerbers
 # regions in F_Cu -- so the fielded board's GND is tracks only. Verified by
 # counting G36 below.
 $K pcb export gerbers --check-zones --no-protel-ext --subtract-soldermask \
-   --layers F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,F.Fab,B.Fab,F.CrtYd,B.CrtYd,Edge.Cuts \
+   --layers F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts \
    -o gerbers/ $P.kicad_pcb 2>&1 | grep -v mtime
 echo "pour regions (G36) in F_Cu: $(grep -c G36 gerbers/$P-F_Cu.gbr), B_Cu: $(grep -c G36 gerbers/$P-B_Cu.gbr)"
 echo "gerber files: $(ls gerbers | wc -l | tr -d ' ')"
-$K pcb export drill --format excellon --excellon-units mm --generate-map --map-format gerberx2 -o gerbers/ $P.kicad_pcb 2>&1 | grep -v mtime
+$K pcb export drill --format excellon --excellon-units mm -o gerbers/ $P.kicad_pcb 2>&1 | grep -v mtime
 rm -f ${P}_jlc.zip && (cd gerbers && zip -q ../${P}_jlc.zip ./*)
 echo "== previews"
 mkdir -p preview
 $K pcb render --side top    --background opaque --zoom 1.0 -w 2000 -h 2000 -o preview/top.png    $P.kicad_pcb 2>&1 | grep -v mtime
 $K pcb render --side bottom --background opaque --zoom 1.0 -w 2000 -h 2000 -o preview/bottom.png $P.kicad_pcb 2>&1 | grep -v mtime
 $K pcb export pdf --layers F.SilkS,F.Cu,Edge.Cuts,F.Fab -o preview/silk_front.pdf $P.kicad_pcb 2>&1 | grep -v mtime
+$K pcb export pdf --layers F.Fab,F.CrtYd,Edge.Cuts -o preview/fab_front.pdf $P.kicad_pcb 2>&1 | grep -v mtime
 $K pcb export pdf --layers B.SilkS,Edge.Cuts --mirror -o preview/silk_back.pdf $P.kicad_pcb 2>&1 | grep -v mtime
 $K sch export pdf -o preview/schematic.pdf $P.kicad_sch 2>&1 | grep -v mtime
 echo "== summary"

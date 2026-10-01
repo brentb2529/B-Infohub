@@ -10117,6 +10117,181 @@
 			)
 		)
 	)
+	(symbol
+		(lib_id "Device:R")
+		(at 176.53 204.47 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e700363c-012e-52f4-93d6-ae7d8bfe4f93")
+		(property "Reference" "R16"
+			(at 179.0700 203.2000 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 179.0700 205.7400 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 176.5300 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 176.5300 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 176.5300 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "A_DE pull-down: port A transceiver in receive while the ESP is in reset or being flashed"
+			(at 176.5300 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "48f460a5-a2dc-5f23-91ef-c3a7c6516dea")
+		)
+		(pin "2"
+			(uuid "9d93a683-f2c1-5a0b-ab92-9ef3c4177caf")
+		)
+		(instances
+			(project "binfohub_bridge"
+				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
+					(reference "R16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 172.7200 204.4700)
+			(xy 167.6400 204.4700)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1d8cbecb-64e5-5735-80e3-6b0e227e4bf2")
+	)
+	(global_label "A_DE"
+		(shape passive)
+		(at 167.6400 204.4700 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "d5752e50-6a04-5603-88f6-57368bccce33")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 167.6400 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 180.3400 204.4700)
+			(xy 185.4200 204.4700)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ae2168bc-ee29-5483-a4cf-870aa50edbcd")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 185.42000000000002 204.47 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "f36d8edf-ab00-59e2-ab82-ac990c581179")
+		(property "Reference" "#PWR031"
+			(at 185.4200 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 185.4200 207.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 185.4200 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 185.4200 204.4700 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "22bae97d-9602-53d4-8745-a955353b5bcd")
+		)
+		(instances
+			(project "binfohub_bridge"
+				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
+					(reference "#PWR031")
+					(unit 1)
+				)
+			)
+		)
+	)
 	(text "PORT B -- INFOHUB PASSTHROUGH. We are Modbus SERVER here, impersonating the controller"
 		(exclude_from_sim no)
 		(at 20 232 0)
@@ -10232,7 +10407,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a4182e43-00ee-556a-aef5-c8f3fa8096bd")
+		(uuid "993d37b3-f222-59da-8015-08b098f22c90")
 	)
 	(global_label "IH_B"
 		(shape passive)
@@ -10244,7 +10419,7 @@
 			)
 			(justify right)
 		)
-		(uuid "9885eff3-6e7c-5295-b110-b28763c10c6d")
+		(uuid "bfbefe0c-3807-5ada-9754-1fce2885113d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 20.3200 248.9200 0)
 			(effects
@@ -10264,7 +10439,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7230459b-ee34-513f-9607-90e3d8c86c63")
+		(uuid "971aa2fd-e44b-58c8-abb2-4cb2d5488886")
 	)
 	(global_label "IH_A"
 		(shape passive)
@@ -10276,7 +10451,7 @@
 			)
 			(justify right)
 		)
-		(uuid "cf0afbed-bb3c-5aa0-81e2-09c28daf0f72")
+		(uuid "9b54d939-d17e-52ce-8d98-42b40a57ea7c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 20.3200 251.4600 0)
 			(effects
@@ -10296,7 +10471,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ca04711e-fb17-5d72-b0c5-b5ce48eddc3b")
+		(uuid "835274b0-3a74-5ad9-b4ee-43949d9082b5")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -10306,8 +10481,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "f36d8edf-ab00-59e2-ab82-ac990c581179")
-		(property "Reference" "#PWR031"
+		(uuid "c1d7e0a8-c10b-5098-addd-6a92594ba79f")
+		(property "Reference" "#PWR032"
 			(at 20.3200 254.0000 0)
 			(effects
 				(font
@@ -10343,12 +10518,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "22bae97d-9602-53d4-8745-a955353b5bcd")
+			(uuid "d6003dc8-0519-500d-9cc5-916e48662c29")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR031")
+					(reference "#PWR032")
 					(unit 1)
 				)
 			)
@@ -10363,7 +10538,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "12723850-0a3a-54fd-b7c2-4dcd0da137bd")
+		(uuid "802ea3db-6a01-5210-98d7-3b5db1ffeb41")
 	)
 	(global_label "+12V_IH"
 		(shape passive)
@@ -10375,7 +10550,7 @@
 			)
 			(justify right)
 		)
-		(uuid "13dd55af-a243-585e-8877-e4cc8aa7b2b8")
+		(uuid "d3576a35-9030-5311-8c8a-66a7a1e8c863")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 20.3200 256.5400 0)
 			(effects
@@ -10489,7 +10664,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c019493b-0ac2-5cad-928c-3d74e55832e6")
+		(uuid "4d2022fa-ed21-57ed-8a31-cf502ef13626")
 	)
 	(global_label "B_RO"
 		(shape passive)
@@ -10501,7 +10676,7 @@
 			)
 			(justify right)
 		)
-		(uuid "ef89341f-e2ed-51a0-99ff-985c9cba6c46")
+		(uuid "a916eaad-8c9a-5d0b-ba45-b0fd8ca8621c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 67.3100 246.3800 0)
 			(effects
@@ -10521,7 +10696,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6a77e43b-f8aa-5249-9077-4923fe44d835")
+		(uuid "9460da0c-d42a-5bc0-a9c4-5e4b5c3b33d0")
 	)
 	(global_label "B_DE"
 		(shape passive)
@@ -10533,7 +10708,7 @@
 			)
 			(justify right)
 		)
-		(uuid "b78a1d59-fd71-5b89-bb50-0286b0ce9f24")
+		(uuid "c55b0884-6985-52ea-9cd0-b80ef3d92a25")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 67.3100 248.9200 0)
 			(effects
@@ -10553,7 +10728,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6dddd157-9cb5-5dce-bc69-f4d3adc9e5e0")
+		(uuid "87d97986-8669-52cc-9141-fd90c806613e")
 	)
 	(global_label "B_DE"
 		(shape passive)
@@ -10565,7 +10740,7 @@
 			)
 			(justify right)
 		)
-		(uuid "84274930-2866-5bcb-890d-642e7ff451bf")
+		(uuid "0fedc565-b169-5c82-8515-ade92277ba74")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 67.3100 251.4600 0)
 			(effects
@@ -10585,7 +10760,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c2ab840d-0af9-5ccd-9dc2-fe9972f31d05")
+		(uuid "dcd55f04-810e-5115-b5b3-6fe512be610a")
 	)
 	(global_label "B_DI"
 		(shape passive)
@@ -10597,7 +10772,7 @@
 			)
 			(justify right)
 		)
-		(uuid "20d074be-d78e-53d6-84b9-82deea618cad")
+		(uuid "7dce2dcc-3d7e-55a9-9f2e-73139abd3645")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 67.3100 256.5400 0)
 			(effects
@@ -10617,7 +10792,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "034d4afe-2946-5acd-9949-bb3c39cb379a")
+		(uuid "e43d4d0c-8840-5b97-9e0a-8b39d55320ba")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -10627,8 +10802,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c1d7e0a8-c10b-5098-addd-6a92594ba79f")
-		(property "Reference" "#PWR032"
+		(uuid "8cb68988-4113-571e-b83e-7d528c18f2bd")
+		(property "Reference" "#PWR033"
 			(at 82.5500 271.7800 0)
 			(effects
 				(font
@@ -10664,12 +10839,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d6003dc8-0519-500d-9cc5-916e48662c29")
+			(uuid "7628be9b-9d4c-5b00-b7d9-75c2fae3cfa1")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR032")
+					(reference "#PWR033")
 					(unit 1)
 				)
 			)
@@ -10684,7 +10859,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "84ccb8f1-e7bd-514a-82d3-cd1eec47d270")
+		(uuid "4650c567-ef7b-5755-ba99-c526ad67e782")
 	)
 	(global_label "IH_A"
 		(shape passive)
@@ -10696,7 +10871,7 @@
 			)
 			(justify left)
 		)
-		(uuid "330b69d9-d0c6-5c7a-9722-213d981fdd81")
+		(uuid "86ba0034-7a65-5eec-8b78-462018c5dcb6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 97.7900 243.8400 0)
 			(effects
@@ -10716,7 +10891,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "eae67a1e-0dd1-5179-8cd5-f602f1abf0f9")
+		(uuid "fb2dce0f-7a85-5d65-8ae7-9ee0b1ec0ab6")
 	)
 	(global_label "IH_B"
 		(shape passive)
@@ -10728,7 +10903,7 @@
 			)
 			(justify left)
 		)
-		(uuid "c30dfcee-e86a-5f99-84b9-1dcc085d75d2")
+		(uuid "1e1834d5-f8f4-542b-bd35-c12352a508d1")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 97.7900 248.9200 0)
 			(effects
@@ -10748,7 +10923,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e4ef2a45-6688-5ebb-b77e-55b1c3f7671d")
+		(uuid "b6aee53e-d52b-5d93-9ba4-44acd1ab9d37")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -10758,8 +10933,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "8cb68988-4113-571e-b83e-7d528c18f2bd")
-		(property "Reference" "#PWR033"
+		(uuid "222b2e32-7bfb-5c46-ae73-7be25b074947")
+		(property "Reference" "#PWR034"
 			(at 82.5500 231.1400 0)
 			(effects
 				(font
@@ -10795,12 +10970,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "7628be9b-9d4c-5b00-b7d9-75c2fae3cfa1")
+			(uuid "618f92d6-a948-50a6-b9e3-ff509e6d983c")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR033")
+					(reference "#PWR034")
 					(unit 1)
 				)
 			)
@@ -10891,7 +11066,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "61daa607-54d6-5df7-9e3e-8647b7b2811c")
+		(uuid "d2aa8280-b2ce-57da-b36c-2e0101b6000f")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -10901,8 +11076,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "222b2e32-7bfb-5c46-ae73-7be25b074947")
-		(property "Reference" "#PWR034"
+		(uuid "e53dbe5e-9222-53a9-a83f-8fe29f08ffb7")
+		(property "Reference" "#PWR035"
 			(at 125.7300 261.6200 0)
 			(effects
 				(font
@@ -10938,12 +11113,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "618f92d6-a948-50a6-b9e3-ff509e6d983c")
+			(uuid "d95aaed5-d828-53f7-a169-c9f275c9d860")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR034")
+					(reference "#PWR035")
 					(unit 1)
 				)
 			)
@@ -10958,7 +11133,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "68d395a0-5304-58c2-9adf-c8421a2a7442")
+		(uuid "b6fac16e-6638-5e56-b046-766d79b5f13d")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -10968,8 +11143,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "e53dbe5e-9222-53a9-a83f-8fe29f08ffb7")
-		(property "Reference" "#PWR035"
+		(uuid "ab0d3e95-f6ac-539c-b4cf-28839fcd9a9b")
+		(property "Reference" "#PWR036"
 			(at 125.7300 279.4000 0)
 			(effects
 				(font
@@ -11005,12 +11180,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d95aaed5-d828-53f7-a169-c9f275c9d860")
+			(uuid "3b463d58-90da-5267-aed4-9ebb55dfcefc")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR035")
+					(reference "#PWR036")
 					(unit 1)
 				)
 			)
@@ -11104,7 +11279,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "23fd6c0e-78a1-5945-b265-b8195c8cd003")
+		(uuid "e0419aa7-001c-540f-87d1-622232fd3037")
 	)
 	(global_label "IH_A"
 		(shape passive)
@@ -11116,7 +11291,7 @@
 			)
 			(justify right)
 		)
-		(uuid "d3806265-d0f4-5b16-aaf0-04e6d4a7c654")
+		(uuid "967f8d77-f501-5395-95f6-af1959c8753f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 16.5100 278.1300 0)
 			(effects
@@ -11136,7 +11311,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f2fac55a-479f-51af-a5da-b37f8d323595")
+		(uuid "edaeaef0-f479-57c7-8f41-b9f3b4d7be98")
 	)
 	(global_label "IH_B"
 		(shape passive)
@@ -11148,7 +11323,7 @@
 			)
 			(justify left)
 		)
-		(uuid "722fe834-aec2-5867-a2f7-69ec2875e134")
+		(uuid "8dfd8dc8-857e-547c-a979-6cffe5b69e7a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 44.4500 278.1300 0)
 			(effects
@@ -11168,7 +11343,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7a4a0334-fc2f-5c9d-8985-3153115aa109")
+		(uuid "53abc49e-1d51-52a0-9515-0b42138f47cd")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -11178,8 +11353,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "ab0d3e95-f6ac-539c-b4cf-28839fcd9a9b")
-		(property "Reference" "#PWR036"
+		(uuid "822be5da-4ea4-5f70-b2bb-f25d415bc30f")
+		(property "Reference" "#PWR037"
 			(at 30.4800 287.0200 0)
 			(effects
 				(font
@@ -11215,12 +11390,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "3b463d58-90da-5267-aed4-9ebb55dfcefc")
+			(uuid "2b3cf803-ea77-5fc4-8c14-d7bb2182d153")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR036")
+					(reference "#PWR037")
 					(unit 1)
 				)
 			)
@@ -11311,7 +11486,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "431b7033-57a5-5def-ae7e-72d268ebfb1f")
+		(uuid "37b46cab-2af8-5106-9d40-ef4563aeae5e")
 	)
 	(global_label "IH_A"
 		(shape passive)
@@ -11323,7 +11498,7 @@
 			)
 			(justify left)
 		)
-		(uuid "57657d8f-e24f-502b-ad85-aaedfaa16391")
+		(uuid "c68a9552-66ae-531c-a091-5ddb7dbb5915")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 125.7300 233.6800 0)
 			(effects
@@ -11343,7 +11518,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3be45753-c60e-5e15-9a91-464ee962f929")
+		(uuid "842c46c5-245b-596f-950f-352b4844f2c6")
 	)
 	(global_label "TERM_B"
 		(shape passive)
@@ -11355,7 +11530,7 @@
 			)
 			(justify right)
 		)
-		(uuid "eba55516-5432-5a22-875b-9143b4fe3418")
+		(uuid "efcfbfee-afb3-5ef7-b976-6527bd16086c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 125.7300 251.4600 0)
 			(effects
@@ -11451,7 +11626,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7e83bfc4-0c23-5e4b-a424-32040dbf40d5")
+		(uuid "ecdad2f2-c4cc-537a-a17d-c43bb68c6c95")
 	)
 	(global_label "TERM_B"
 		(shape passive)
@@ -11463,7 +11638,7 @@
 			)
 			(justify right)
 		)
-		(uuid "58e5e2f2-4786-507e-8ccd-4f1a3911f632")
+		(uuid "a792f748-4cb1-5c59-95dc-57d646152268")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 139.7000 242.5700 0)
 			(effects
@@ -11483,7 +11658,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cf0d5f47-2a3f-5c18-b5df-94565780060e")
+		(uuid "5b6b76ca-8917-5e32-9d9f-bb3ecc0ad18b")
 	)
 	(global_label "IH_B"
 		(shape passive)
@@ -11495,7 +11670,7 @@
 			)
 			(justify right)
 		)
-		(uuid "42334247-a803-56ff-bd3a-a5d6f92edcd4")
+		(uuid "891c52b3-3fa1-54ff-a481-82da9182bca2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 139.7000 245.1100 0)
 			(effects
@@ -11523,7 +11698,7 @@
 				)
 			)
 		)
-		(property "Value" "4k7"
+		(property "Value" "680R"
 			(at 179.0700 243.8400 0)
 			(effects
 				(font
@@ -11549,7 +11724,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C23162"
+		(property "LCSC" "C23228"
 			(at 176.5300 242.5700 0)
 			(effects
 				(font
@@ -11558,7 +11733,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Fail-safe bias, InfoHub pair: pull-up on A. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1."
+		(property "Description" "Fail-safe bias, InfoHub pair: pull-up on A. 680R covers an unterminated pair or a terminated far end; ~390R if both ends are terminated. Rev 1.1."
 			(at 176.5300 242.5700 0)
 			(effects
 				(font
@@ -11591,7 +11766,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "331338b5-e1fe-56e4-8a7f-70df206ace96")
+		(uuid "ecc9abad-5a35-5d6c-949e-a6f5be1efee9")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -11601,8 +11776,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "822be5da-4ea4-5f70-b2bb-f25d415bc30f")
-		(property "Reference" "#PWR037"
+		(uuid "d3e5df1a-0a60-55a4-9d7c-39be660e62e6")
+		(property "Reference" "#PWR038"
 			(at 167.6400 242.5700 0)
 			(effects
 				(font
@@ -11638,12 +11813,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2b3cf803-ea77-5fc4-8c14-d7bb2182d153")
+			(uuid "c1957394-dd31-5b2b-8fdb-98bed7bd8510")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR037")
+					(reference "#PWR038")
 					(unit 1)
 				)
 			)
@@ -11658,7 +11833,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9f41fee0-1d19-568f-abc5-8e2f0fea0b76")
+		(uuid "ba37ac93-f20c-5c35-94a5-cfe116a5d7f9")
 	)
 	(global_label "IH_A"
 		(shape passive)
@@ -11670,7 +11845,7 @@
 			)
 			(justify left)
 		)
-		(uuid "7356a2f9-82ea-5f1f-b6a2-bfe72b0d569c")
+		(uuid "a68cd61b-8abf-5462-9426-eb2b9ac079bc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 185.4200 242.5700 0)
 			(effects
@@ -11698,7 +11873,7 @@
 				)
 			)
 		)
-		(property "Value" "4k7"
+		(property "Value" "680R"
 			(at 179.0700 271.7800 0)
 			(effects
 				(font
@@ -11724,7 +11899,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C23162"
+		(property "LCSC" "C23228"
 			(at 176.5300 270.5100 0)
 			(effects
 				(font
@@ -11733,7 +11908,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Fail-safe bias, InfoHub pair: pull-down on B. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1."
+		(property "Description" "Fail-safe bias, InfoHub pair: pull-down on B. 680R covers an unterminated pair or a terminated far end; ~390R if both ends are terminated. Rev 1.1."
 			(at 176.5300 270.5100 0)
 			(effects
 				(font
@@ -11766,7 +11941,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4afe2da7-1d1f-58b2-bda9-e1be6696ba2f")
+		(uuid "7a0acd3e-6ef9-5121-a183-6176dc52a83b")
 	)
 	(global_label "IH_B"
 		(shape passive)
@@ -11778,7 +11953,7 @@
 			)
 			(justify right)
 		)
-		(uuid "5ae45289-d8e4-5d7a-aa68-9246cea5289b")
+		(uuid "fefe3484-49cc-51a6-9ea1-af301554f9b4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 167.6400 270.5100 0)
 			(effects
@@ -11798,7 +11973,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fbabbbca-b87f-5176-af22-0d496386f9e7")
+		(uuid "9bc8819e-2312-5e6c-813e-ee0bb900ed0b")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -11808,8 +11983,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "d3e5df1a-0a60-55a4-9d7c-39be660e62e6")
-		(property "Reference" "#PWR038"
+		(uuid "6c32ce70-2ce3-5dbc-a6fc-b53f16e50ae4")
+		(property "Reference" "#PWR039"
 			(at 185.4200 270.5100 0)
 			(effects
 				(font
@@ -11845,12 +12020,187 @@
 			)
 		)
 		(pin "1"
-			(uuid "c1957394-dd31-5b2b-8fdb-98bed7bd8510")
+			(uuid "8462ee30-dc0c-5c98-bf40-4327d09f48a2")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR038")
+					(reference "#PWR039")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 198.12 270.51 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d57c00e9-1e44-5dd1-9e4f-4e7049a0f5bb")
+		(property "Reference" "R17"
+			(at 200.6600 269.2400 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 200.6600 271.7800 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 198.1200 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 198.1200 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 198.1200 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "B_DE pull-down: port B transceiver in receive while the ESP is in reset or being flashed (see R16)"
+			(at 198.1200 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8400b352-d2e3-5395-9913-bfd2df802187")
+		)
+		(pin "2"
+			(uuid "c3c4e1b3-3800-51ac-b9af-e5bde57fecba")
+		)
+		(instances
+			(project "binfohub_bridge"
+				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
+					(reference "R17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 194.3100 270.5100)
+			(xy 189.2300 270.5100)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4b176457-2fae-53f3-b8fd-77f78f461a2d")
+	)
+	(global_label "B_DE"
+		(shape passive)
+		(at 189.2300 270.5100 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "2f7ad879-3a42-53dd-8ce5-7d21c7783351")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 189.2300 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 201.9300 270.5100)
+			(xy 207.0100 270.5100)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8ddb7be0-bbc3-5fa6-86fd-3b3bedd22fda")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 207.01 270.51 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "2400587a-6048-5a09-852f-e4194e4d36bf")
+		(property "Reference" "#PWR040"
+			(at 207.0100 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 207.0100 273.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 207.0100 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 207.0100 270.5100 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fe2a50f9-6d4e-5d49-bda5-480409b2133c")
+		)
+		(instances
+			(project "binfohub_bridge"
+				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
+					(reference "#PWR040")
 					(unit 1)
 				)
 			)
@@ -12329,7 +12679,7 @@
 				)
 			)
 		)
-		(property "Value" "ESP32-WROOM-32E"
+		(property "Value" "ESP32-WROOM-32E-H4"
 			(at 292.1000 101.6000 0)
 			(effects
 				(font
@@ -12355,7 +12705,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C2973652"
+		(property "LCSC" "C3013935"
 			(at 289.5600 100.3300 0)
 			(effects
 				(font
@@ -12364,7 +12714,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "ESP32-WROOM-32E, 4 MB. Soldered module, antenna toward the board edge. ALTERNATE: ESP32-WROOM-32UE-N4 (C2934568) -- identical pads, U.FL instead of the PCB antenna; fit with a U.FL-to-SMA bulkhead pigtail through the enclosure for a remote antenna. Rev 1.1."
+		(property "Description" "ESP32-WROOM-32E-H4: 4 MB, -40..+105 C grade (the plain -32E is 85 C, and this revision exists because the die reached 87 C). Soldered module, antenna toward the board edge. Standard PCBA only at JLC. ALTERNATE: ESP32-WROOM-32UE-N4 (C2934568, 85 C grade) -- identical pads, U.FL instead of the PCB antenna; fit with a U.FL-to-SMA bulkhead pigtail through the enclosure for a remote antenna. Rev 1.1."
 			(at 289.5600 100.3300 0)
 			(effects
 				(font
@@ -12499,7 +12849,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "25751113-547e-5ca1-a6ae-40c43aada8b7")
+		(uuid "3cffd779-add1-5ec6-875e-8780498428ff")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -12509,8 +12859,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "6c32ce70-2ce3-5dbc-a6fc-b53f16e50ae4")
-		(property "Reference" "#PWR039"
+		(uuid "8227fa43-60ed-5b24-a636-396943a33968")
+		(property "Reference" "#PWR041"
 			(at 289.5600 59.6900 0)
 			(effects
 				(font
@@ -12546,12 +12896,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "8462ee30-dc0c-5c98-bf40-4327d09f48a2")
+			(uuid "52971618-5e4e-5ca0-b339-d7d59cdc0c20")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR039")
+					(reference "#PWR041")
 					(unit 1)
 				)
 			)
@@ -12566,7 +12916,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "42476de8-3331-5475-95b7-219743b49024")
+		(uuid "4d5895e6-07eb-5479-8573-66d719b31eaa")
 	)
 	(global_label "ESP_EN"
 		(shape passive)
@@ -12578,7 +12928,7 @@
 			)
 			(justify right)
 		)
-		(uuid "799e2071-52f8-5ac8-a2a2-35b2aa031eb3")
+		(uuid "73908857-50ea-50df-903b-1caad6f628bc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 269.2400 69.8500 0)
 			(effects
@@ -12614,7 +12964,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "218c24dc-a017-56c8-b1ee-39448cee5f6d")
+		(uuid "f445be6d-66f5-544d-ab44-7f11424260cb")
 	)
 	(global_label "FAN_PWM"
 		(shape passive)
@@ -12626,7 +12976,7 @@
 			)
 			(justify left)
 		)
-		(uuid "9ee49807-28a6-55d9-b5e5-0440cf2a6238")
+		(uuid "26021091-5ada-50ad-a603-1cbbc3f01d8d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 120.6500 0)
 			(effects
@@ -12650,7 +13000,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "58e30f06-5224-5b82-b75d-5d3ac4a3b165")
+		(uuid "572a65c3-c648-5c46-a852-6e3ac7e3f9fe")
 	)
 	(global_label "LED_WIFI"
 		(shape passive)
@@ -12662,7 +13012,7 @@
 			)
 			(justify left)
 		)
-		(uuid "ea9b30fa-d8cd-5888-864a-5cd1fd684b71")
+		(uuid "96b2bd8d-c113-5816-9970-e11d57e94c57")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 113.0300 0)
 			(effects
@@ -12682,7 +13032,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d7d815f7-b0d1-5adc-8a76-7b99f7a0d902")
+		(uuid "cbf45b62-7009-52a5-adea-b5be424e47b1")
 	)
 	(global_label "LED_BUS"
 		(shape passive)
@@ -12694,7 +13044,7 @@
 			)
 			(justify left)
 		)
-		(uuid "1a4a9cfb-0fd0-53c5-9763-cad3362974ed")
+		(uuid "afb91ccc-4253-54b5-a92a-0d93f3c2d578")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 115.5700 0)
 			(effects
@@ -12714,7 +13064,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "aac7c65c-779d-52d2-b841-b21c1aa74d36")
+		(uuid "6dc05a76-220c-5ab1-bb32-52e21821ed63")
 	)
 	(global_label "LED_FAULT"
 		(shape passive)
@@ -12726,7 +13076,7 @@
 			)
 			(justify left)
 		)
-		(uuid "44d83866-06b4-526f-8269-2ffebf752b05")
+		(uuid "a0133ca2-960d-56e8-b829-acaab67d3547")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 118.1100 0)
 			(effects
@@ -12790,7 +13140,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a2291173-d235-507f-b086-1cb6b4e1b376")
+		(uuid "0dc3584c-eedc-574e-a14c-83b2df58efbf")
 	)
 	(global_label "ESP_IO0"
 		(shape passive)
@@ -12802,7 +13152,7 @@
 			)
 			(justify left)
 		)
-		(uuid "6a172e47-d0d4-580b-9a7c-93a20cff779f")
+		(uuid "b0ff3bfe-85aa-52a5-b0da-e31393317d67")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 69.8500 0)
 			(effects
@@ -12822,7 +13172,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4d89353b-43f9-5005-bae6-ddc696d65f66")
+		(uuid "3816c6da-f2fc-54bd-91f9-deea5fd5df09")
 	)
 	(global_label "A_DE"
 		(shape passive)
@@ -12834,7 +13184,7 @@
 			)
 			(justify left)
 		)
-		(uuid "c5d7f28d-6f03-5b98-a2d7-34ca8b5ebd9b")
+		(uuid "ae972e6d-1158-51b2-a1eb-5c7b027c171d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 80.0100 0)
 			(effects
@@ -12854,7 +13204,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "2686996e-be24-5e11-abbf-affebee45bfa")
+		(uuid "8405807e-4c41-5a9b-af57-ec543b5ea6a6")
 	)
 	(global_label "A_RO"
 		(shape passive)
@@ -12866,7 +13216,7 @@
 			)
 			(justify left)
 		)
-		(uuid "c23b5b5d-bb27-5428-a2d5-8051e864f92c")
+		(uuid "2d6711d0-ce4b-56ca-af6d-c3661a5ae98a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 95.2500 0)
 			(effects
@@ -12886,7 +13236,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4b9faefe-c1e6-5660-9987-ac90c3262c5b")
+		(uuid "132a776e-8510-5389-bdf0-71119bdb0931")
 	)
 	(global_label "A_DI"
 		(shape passive)
@@ -12898,7 +13248,7 @@
 			)
 			(justify left)
 		)
-		(uuid "bb6e81ab-313e-5df3-b5b2-73fcb761a6d1")
+		(uuid "ee61e7d1-b7f9-58a0-adf0-34d808d558bb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 97.7900 0)
 			(effects
@@ -12934,7 +13284,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "494ab901-420c-5dca-b3c8-147fc181162e")
+		(uuid "5374ebfb-6a6e-5452-8dde-d818dc4caf6a")
 	)
 	(global_label "B_DE"
 		(shape passive)
@@ -12946,7 +13296,7 @@
 			)
 			(justify left)
 		)
-		(uuid "97532ca3-0f17-588e-9d3a-2f1c64d84fb5")
+		(uuid "a23f219f-f7ab-5da7-adb6-7a2d8dafb2da")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 105.4100 0)
 			(effects
@@ -12966,7 +13316,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e2d38df2-5a5f-5515-9e76-c5deb2b93b91")
+		(uuid "eb103e51-6248-5d31-b8d1-312fbd3f3fb1")
 	)
 	(global_label "ESP_RXD0"
 		(shape passive)
@@ -12978,7 +13328,7 @@
 			)
 			(justify left)
 		)
-		(uuid "3396fa98-fe60-5acc-a50e-2491f80397ad")
+		(uuid "41d56cf4-6be0-5317-8da9-386db8efbc11")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 77.4700 0)
 			(effects
@@ -12998,7 +13348,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d25f213a-1389-5ba5-b7a2-4b9f5bec4290")
+		(uuid "921e3836-03ff-5124-9dac-e7f77e578054")
 	)
 	(global_label "ESP_TXD0"
 		(shape passive)
@@ -13010,7 +13360,7 @@
 			)
 			(justify left)
 		)
-		(uuid "587916bf-b9ea-5dc6-a64a-7047d8fa6148")
+		(uuid "207172d4-b026-5f07-b3d2-80f0fd746268")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 72.3900 0)
 			(effects
@@ -13030,7 +13380,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "408f684e-35cd-579f-8ff8-f8716f46259e")
+		(uuid "845e9755-209e-5043-88cf-470697f543b8")
 	)
 	(global_label "B_DI"
 		(shape passive)
@@ -13042,7 +13392,7 @@
 			)
 			(justify left)
 		)
-		(uuid "b8e6d396-2753-5be6-a77f-e4c976653891")
+		(uuid "219db777-7429-5e4c-a576-54dfbbab0193")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 107.9500 0)
 			(effects
@@ -13062,7 +13412,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "04ba0eef-6321-581d-98da-1449b025f18f")
+		(uuid "e5979ecf-d867-5eee-b612-aed933a812dd")
 	)
 	(global_label "B_RO"
 		(shape passive)
@@ -13074,7 +13424,7 @@
 			)
 			(justify left)
 		)
-		(uuid "cb61a2ee-8e91-5908-9182-2b6849f32dfb")
+		(uuid "129784c9-da68-5586-8f1c-4dea49ce458e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 309.8800 110.4900 0)
 			(effects
@@ -13094,7 +13444,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d559c6c8-123e-50e8-8064-6b228e9850ad")
+		(uuid "351b9882-cd54-533d-bed4-ad69e93bd5d8")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -13104,8 +13454,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "2400587a-6048-5a09-852f-e4194e4d36bf")
-		(property "Reference" "#PWR040"
+		(uuid "5e27f68f-7d3f-596a-98a9-7700169ec1c9")
+		(property "Reference" "#PWR042"
 			(at 289.5600 140.9700 0)
 			(effects
 				(font
@@ -13141,12 +13491,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fe2a50f9-6d4e-5d49-bda5-480409b2133c")
+			(uuid "c834d845-74c4-55d0-9a18-729e384f213d")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR040")
+					(reference "#PWR042")
 					(unit 1)
 				)
 			)
@@ -13261,7 +13611,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0076fa9d-0694-539c-9134-2dce1379b05b")
+		(uuid "9f2c3aa3-908c-5a4a-b49f-502738a2ba2b")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -13271,8 +13621,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "8227fa43-60ed-5b24-a636-396943a33968")
-		(property "Reference" "#PWR041"
+		(uuid "395d39c0-e471-5912-ae2e-5f9c7f0bb9ae")
+		(property "Reference" "#PWR043"
 			(at 250.1900 158.7500 0)
 			(effects
 				(font
@@ -13308,12 +13658,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "52971618-5e4e-5ca0-b339-d7d59cdc0c20")
+			(uuid "44a55a42-0509-54d2-b066-d97673290ebf")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR041")
+					(reference "#PWR043")
 					(unit 1)
 				)
 			)
@@ -13328,7 +13678,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cb1b8481-e632-523f-80ee-9fd1b9b54da3")
+		(uuid "74d328f4-c03c-521a-9d36-d710f92d73f4")
 	)
 	(global_label "ESP_EN"
 		(shape passive)
@@ -13340,7 +13690,7 @@
 			)
 			(justify right)
 		)
-		(uuid "1e23cc3b-5406-562c-b52a-a16bdab2655d")
+		(uuid "2657aa4c-a7db-586f-878a-7c52834866eb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 250.1900 176.5300 0)
 			(effects
@@ -13436,7 +13786,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "18b80756-df9a-5f36-b453-7fdafcf3ef1c")
+		(uuid "cc40f216-c57c-5772-99a8-6c8c06dfaca7")
 	)
 	(global_label "ESP_EN"
 		(shape passive)
@@ -13448,7 +13798,7 @@
 			)
 			(justify left)
 		)
-		(uuid "2b8261b8-b5a8-52ff-b218-c49094f0fd29")
+		(uuid "c703ca67-c886-51fe-a7b5-083321afc248")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 271.7800 158.7500 0)
 			(effects
@@ -13468,7 +13818,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4768c6fb-1745-5d54-820e-335ce091bed3")
+		(uuid "eabf057f-e0c3-5a97-a69a-3910902ead68")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -13478,8 +13828,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "5e27f68f-7d3f-596a-98a9-7700169ec1c9")
-		(property "Reference" "#PWR042"
+		(uuid "7361c069-2dc0-5d93-ab92-b62d74bec36b")
+		(property "Reference" "#PWR044"
 			(at 271.7800 176.5300 0)
 			(effects
 				(font
@@ -13515,12 +13865,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "c834d845-74c4-55d0-9a18-729e384f213d")
+			(uuid "de2c726b-e77c-5ff8-a6c5-b6a9c1d9fe10")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR042")
+					(reference "#PWR044")
 					(unit 1)
 				)
 			)
@@ -13611,7 +13961,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a4efa120-83cd-5109-8e58-a4e4b9d2dbc0")
+		(uuid "f7969dcf-0a00-545f-8030-7624f6b0bd40")
 	)
 	(global_label "ESP_EN"
 		(shape passive)
@@ -13623,7 +13973,7 @@
 			)
 			(justify right)
 		)
-		(uuid "28ccaf23-fb26-516e-89ee-bc6a5c1e4969")
+		(uuid "fea49ec6-3fe6-50b8-8b0c-337d57523297")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 281.9400 167.6400 0)
 			(effects
@@ -13643,7 +13993,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "2bb9b0fb-9959-54c8-b250-dd84e5bae5bd")
+		(uuid "d1e0e6d8-ef3d-53cc-bbbe-6c4299cc9ddd")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -13653,8 +14003,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "395d39c0-e471-5912-ae2e-5f9c7f0bb9ae")
-		(property "Reference" "#PWR043"
+		(uuid "bad0293d-1012-5ab4-9ea4-a204ae828929")
+		(property "Reference" "#PWR045"
 			(at 302.2600 167.6400 0)
 			(effects
 				(font
@@ -13690,12 +14040,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "44a55a42-0509-54d2-b066-d97673290ebf")
+			(uuid "e07c6d54-78d6-5402-9af1-9fb6a2bd8a5b")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR043")
+					(reference "#PWR045")
 					(unit 1)
 				)
 			)
@@ -13786,7 +14136,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "924b8621-717a-502c-a985-fb6a93d2c560")
+		(uuid "81fc41db-3798-526f-8d61-613ab3d8a3df")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -13796,8 +14146,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "7361c069-2dc0-5d93-ab92-b62d74bec36b")
-		(property "Reference" "#PWR044"
+		(uuid "9f685ead-7ff9-5f23-8f01-182722782e5d")
+		(property "Reference" "#PWR046"
 			(at 317.5000 158.7500 0)
 			(effects
 				(font
@@ -13833,12 +14183,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "de2c726b-e77c-5ff8-a6c5-b6a9c1d9fe10")
+			(uuid "dcc7eccd-a26b-57bc-88a4-43e0676c62fe")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR044")
+					(reference "#PWR046")
 					(unit 1)
 				)
 			)
@@ -13853,7 +14203,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fd89669f-ff0b-543b-9597-1d6f8a2f7541")
+		(uuid "ac599824-13b0-524d-9cd5-70ceaf827949")
 	)
 	(global_label "ESP_IO0"
 		(shape passive)
@@ -13865,7 +14215,7 @@
 			)
 			(justify right)
 		)
-		(uuid "5c91ea03-0e28-5bae-9654-057d18cc74d5")
+		(uuid "a57ed7e2-5893-52ea-bddd-fcce158af4fe")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 317.5000 176.5300 0)
 			(effects
@@ -13961,7 +14311,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "391d096f-fdbe-558f-9d96-a1be63f559d4")
+		(uuid "38dd4b2d-06be-581e-b4aa-b4b6786e4462")
 	)
 	(global_label "ESP_IO0"
 		(shape passive)
@@ -13973,7 +14323,7 @@
 			)
 			(justify right)
 		)
-		(uuid "3c3015a9-9a83-5c4c-ab4c-e433d9e7b420")
+		(uuid "5824008e-1ffc-53f4-b616-d384269b38f6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 330.2000 167.6400 0)
 			(effects
@@ -13993,7 +14343,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d99e27a4-c4f9-5ebc-a521-07469b30d760")
+		(uuid "609a6fe7-4a8b-52c9-96b9-8d106e754319")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -14003,8 +14353,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "bad0293d-1012-5ab4-9ea4-a204ae828929")
-		(property "Reference" "#PWR045"
+		(uuid "b41ff2e4-833e-553c-9c08-a8c86e396159")
+		(property "Reference" "#PWR047"
 			(at 350.5200 167.6400 0)
 			(effects
 				(font
@@ -14040,12 +14390,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "e07c6d54-78d6-5402-9af1-9fb6a2bd8a5b")
+			(uuid "01a910c3-9a98-568f-8de2-6d2865376e36")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR045")
+					(reference "#PWR047")
 					(unit 1)
 				)
 			)
@@ -14148,7 +14498,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6cba1f80-3762-5127-b61a-458ddf0f3762")
+		(uuid "eb7a80df-c6b7-5d66-8de1-93e69ae19792")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -14158,8 +14508,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "9f685ead-7ff9-5f23-8f01-182722782e5d")
-		(property "Reference" "#PWR046"
+		(uuid "3ed6132a-e8ee-5290-821a-8311ed799b82")
+		(property "Reference" "#PWR048"
 			(at 361.9500 95.2500 0)
 			(effects
 				(font
@@ -14195,12 +14545,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "dcc7eccd-a26b-57bc-88a4-43e0676c62fe")
+			(uuid "72277a02-d231-537c-9707-01923d0d6910")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR046")
+					(reference "#PWR048")
 					(unit 1)
 				)
 			)
@@ -14215,7 +14565,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "98a1eebc-493a-5ee3-b602-9034f5be439a")
+		(uuid "5121b70d-3a5f-5f70-9996-60ba7cb0cafc")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -14225,8 +14575,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "b41ff2e4-833e-553c-9c08-a8c86e396159")
-		(property "Reference" "#PWR047"
+		(uuid "b5665065-a43b-563c-971e-74dbd085fc07")
+		(property "Reference" "#PWR049"
 			(at 361.9500 97.7900 0)
 			(effects
 				(font
@@ -14262,12 +14612,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "01a910c3-9a98-568f-8de2-6d2865376e36")
+			(uuid "f9470e6e-939a-564a-9f50-0cb84de6a7fe")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR047")
+					(reference "#PWR049")
 					(unit 1)
 				)
 			)
@@ -14282,7 +14632,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e56ca806-079a-5a55-a96f-2442c51ccc4b")
+		(uuid "1c583a9a-b0a9-5894-9c0c-8b4a96a24b57")
 	)
 	(global_label "ESP_TXD0"
 		(shape passive)
@@ -14294,7 +14644,7 @@
 			)
 			(justify right)
 		)
-		(uuid "986636b6-53c9-50a9-8da7-e20358e0d5c6")
+		(uuid "11d5cdef-01d3-57b0-a4d0-1604bf4fed69")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 361.9500 100.3300 0)
 			(effects
@@ -14314,7 +14664,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9da2f2d8-dbbf-50d2-ab6a-3dc3f885bdb5")
+		(uuid "8ea4f3e0-d777-55a2-9777-f9c7d1863e01")
 	)
 	(global_label "ESP_RXD0"
 		(shape passive)
@@ -14326,7 +14676,7 @@
 			)
 			(justify right)
 		)
-		(uuid "f250faa2-9cf3-5e9e-b21b-b02a8c0c9f50")
+		(uuid "d8ae197c-da17-5027-b606-f0dc9c8a7c6d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 361.9500 102.8700 0)
 			(effects
@@ -14346,7 +14696,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "94d984f1-0d8e-5959-89bb-2ee46c41ad28")
+		(uuid "5bbdff0a-42a7-55f8-90e3-b2836e74d735")
 	)
 	(global_label "ESP_EN"
 		(shape passive)
@@ -14358,7 +14708,7 @@
 			)
 			(justify right)
 		)
-		(uuid "84963637-1312-51ac-a018-f1374626bdcd")
+		(uuid "d2ec43fd-2c02-5a20-8b2d-fb38af72b073")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 361.9500 105.4100 0)
 			(effects
@@ -14378,7 +14728,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "41f14c68-27f4-59a1-a77a-dfd5f0acd98c")
+		(uuid "c18f8abb-ba0c-5560-af52-c1443cee1b4c")
 	)
 	(global_label "ESP_IO0"
 		(shape passive)
@@ -14390,7 +14740,7 @@
 			)
 			(justify right)
 		)
-		(uuid "d5a3a614-bbb2-557a-bb4f-d793aaf28fe0")
+		(uuid "2e34f3f8-0e92-5423-b3fc-80274cab3b5d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 361.9500 107.9500 0)
 			(effects
@@ -14453,7 +14803,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "3.3 V bulk at the module VDD pad"
+		(property "Description" "3.3 V bulk near the module VDD pad"
 			(at 372.1100 160.0200 0)
 			(effects
 				(font
@@ -14486,7 +14836,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a889baba-ff66-55ee-9276-149524513025")
+		(uuid "ee6de41e-a8b0-5c87-a8d3-62a2c3d03ff7")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -14496,8 +14846,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "3ed6132a-e8ee-5290-821a-8311ed799b82")
-		(property "Reference" "#PWR048"
+		(uuid "acb96f50-2a79-562c-a663-3a1f36b5b3e0")
+		(property "Reference" "#PWR050"
 			(at 372.1100 151.1300 0)
 			(effects
 				(font
@@ -14533,12 +14883,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "72277a02-d231-537c-9707-01923d0d6910")
+			(uuid "4ba7b76d-ff80-5036-a7e5-82cf8995ff8a")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR048")
+					(reference "#PWR050")
 					(unit 1)
 				)
 			)
@@ -14553,7 +14903,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c9237a79-6f1d-568b-8e2d-c0c78254081d")
+		(uuid "ed8bb90e-71ec-5492-acad-9e7bb99d731c")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -14563,8 +14913,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "b5665065-a43b-563c-971e-74dbd085fc07")
-		(property "Reference" "#PWR049"
+		(uuid "9aca3d73-6295-5c06-83f1-87e7ac6631a4")
+		(property "Reference" "#PWR051"
 			(at 372.1100 168.9100 0)
 			(effects
 				(font
@@ -14600,12 +14950,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "f9470e6e-939a-564a-9f50-0cb84de6a7fe")
+			(uuid "2eb48b2e-5ed6-5d1a-bf03-2c0d96747b1a")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR049")
+					(reference "#PWR051")
 					(unit 1)
 				)
 			)
@@ -14663,7 +15013,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "3.3 V HF decoupling at the module"
+		(property "Description" "3.3 V HF decoupling, 4.5 mm from the VDD pad"
 			(at 392.4300 160.0200 0)
 			(effects
 				(font
@@ -14696,7 +15046,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "deac9d7b-9636-5366-bb41-571e5b77846f")
+		(uuid "dd244d3f-c9d8-506a-9923-f1d1cca24819")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -14706,8 +15056,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "acb96f50-2a79-562c-a663-3a1f36b5b3e0")
-		(property "Reference" "#PWR050"
+		(uuid "271ae1e1-5094-51a7-9c2b-21c90a236388")
+		(property "Reference" "#PWR052"
 			(at 392.4300 151.1300 0)
 			(effects
 				(font
@@ -14743,12 +15093,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "4ba7b76d-ff80-5036-a7e5-82cf8995ff8a")
+			(uuid "5c965f52-7d96-556a-bc7e-bbfaa1ab3846")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR050")
+					(reference "#PWR052")
 					(unit 1)
 				)
 			)
@@ -14763,7 +15113,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "df1e9df3-b114-5b71-a6f6-74eb9c9e1174")
+		(uuid "ee24d32f-0117-5631-a224-a898f3721bfa")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -14773,8 +15123,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "9aca3d73-6295-5c06-83f1-87e7ac6631a4")
-		(property "Reference" "#PWR051"
+		(uuid "e98d44ad-f2ef-59a2-9e88-217c2f2c34e9")
+		(property "Reference" "#PWR053"
 			(at 392.4300 168.9100 0)
 			(effects
 				(font
@@ -14810,12 +15160,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2eb48b2e-5ed6-5d1a-bf03-2c0d96747b1a")
+			(uuid "022e74cb-8782-5912-9364-5811cca6443e")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR051")
+					(reference "#PWR053")
 					(unit 1)
 				)
 			)
@@ -14930,7 +15280,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4d6d80f3-0461-5b9d-ab17-ab6b1e5cf212")
+		(uuid "17a08520-8bef-555c-87a0-b77bfec3ea6b")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -14940,8 +15290,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "271ae1e1-5094-51a7-9c2b-21c90a236388")
-		(property "Reference" "#PWR052"
+		(uuid "372b8f4c-2513-5acb-953a-096d3c22c2c1")
+		(property "Reference" "#PWR054"
 			(at 250.1900 205.7400 0)
 			(effects
 				(font
@@ -14977,12 +15327,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "5c965f52-7d96-556a-bc7e-bbfaa1ab3846")
+			(uuid "bfc871c4-38db-59f3-a2de-ed8337e4747d")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR052")
+					(reference "#PWR054")
 					(unit 1)
 				)
 			)
@@ -14997,7 +15347,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1224b1b7-f27a-54f4-96b7-622d308f46dc")
+		(uuid "a0f31022-c475-5a00-bb2a-3ab446111b8e")
 	)
 	(global_label "LED_PWR"
 		(shape passive)
@@ -15009,7 +15359,7 @@
 			)
 			(justify right)
 		)
-		(uuid "3023bc40-dbce-5569-b0ac-ef8cc36fa555")
+		(uuid "c3e1fbb0-4de9-50b5-be01-dc30869ac044")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 250.1900 223.5200 0)
 			(effects
@@ -15105,7 +15455,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a28bdee8-aba6-5081-b822-9600fe3493a2")
+		(uuid "b8150e4d-7b18-5256-8337-f1cb2891e5f8")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -15115,8 +15465,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "e98d44ad-f2ef-59a2-9e88-217c2f2c34e9")
-		(property "Reference" "#PWR053"
+		(uuid "fcc9025d-5d5e-5503-b523-dd0cd398b55f")
+		(property "Reference" "#PWR055"
 			(at 250.1900 245.1100 0)
 			(effects
 				(font
@@ -15152,12 +15502,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "022e74cb-8782-5912-9364-5811cca6443e")
+			(uuid "df3ed312-eb33-5f7e-8605-878c9d178b8d")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR053")
+					(reference "#PWR055")
 					(unit 1)
 				)
 			)
@@ -15172,7 +15522,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1ee53ad0-8619-5d5f-89dd-35c052cc816a")
+		(uuid "506eb254-e36c-5deb-bf40-dae1aa6d0410")
 	)
 	(global_label "LED_PWR"
 		(shape passive)
@@ -15184,7 +15534,7 @@
 			)
 			(justify left)
 		)
-		(uuid "4ecf942b-20a0-5f3f-b484-87cb7c53e5cd")
+		(uuid "fdc4267a-6ff5-50b9-aea5-e2e443ea40ea")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 250.1900 227.3300 0)
 			(effects
@@ -15280,7 +15630,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "09c7e735-1c45-5886-a925-fd4dcc127050")
+		(uuid "f6d690f7-c48f-568e-a3e9-3f3c9f7c959e")
 	)
 	(global_label "LED_WIFI"
 		(shape passive)
@@ -15292,7 +15642,7 @@
 			)
 			(justify left)
 		)
-		(uuid "c31bfbd5-1b87-5fbc-9592-2741a922e194")
+		(uuid "7635b31e-5f2d-5923-9480-0800838af921")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 284.4800 205.7400 0)
 			(effects
@@ -15312,7 +15662,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3be8f87a-546e-53b9-b480-bb741feb30ea")
+		(uuid "056d2a18-69d3-5f4c-a61f-4b1042d97e8b")
 	)
 	(global_label "LED_WIFI_A"
 		(shape passive)
@@ -15324,7 +15674,7 @@
 			)
 			(justify right)
 		)
-		(uuid "d1fe3c96-fd1b-5784-8f56-045e629d715f")
+		(uuid "28cb6f2f-bddb-5e53-9563-24dc0ba7109d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 284.4800 223.5200 0)
 			(effects
@@ -15420,7 +15770,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "de2effeb-aa6f-59ed-9283-68bd00694957")
+		(uuid "b2ad7baf-2fad-5669-b924-7457c6d28f64")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -15430,8 +15780,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "372b8f4c-2513-5acb-953a-096d3c22c2c1")
-		(property "Reference" "#PWR054"
+		(uuid "c8baaa3d-481b-58bd-b4c9-a7928ace987b")
+		(property "Reference" "#PWR056"
 			(at 284.4800 245.1100 0)
 			(effects
 				(font
@@ -15467,12 +15817,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "bfc871c4-38db-59f3-a2de-ed8337e4747d")
+			(uuid "2247ffce-4c98-54ea-9769-f15a654ec025")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR054")
+					(reference "#PWR056")
 					(unit 1)
 				)
 			)
@@ -15487,7 +15837,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7600ed10-348f-524b-9947-da3a829daebc")
+		(uuid "70ec1255-3cc2-5884-b3e8-b83537b44c9a")
 	)
 	(global_label "LED_WIFI_A"
 		(shape passive)
@@ -15499,7 +15849,7 @@
 			)
 			(justify left)
 		)
-		(uuid "76d8b496-5042-5ea9-9654-2a0d491a0ded")
+		(uuid "d19a6b25-b5f5-502a-9f48-4aae8ae6f59c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 284.4800 227.3300 0)
 			(effects
@@ -15595,7 +15945,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "bc434938-8727-55e0-9981-ec815cf42734")
+		(uuid "b9760100-8aa5-54d0-ae11-fb8a5e59137e")
 	)
 	(global_label "LED_BUS"
 		(shape passive)
@@ -15607,7 +15957,7 @@
 			)
 			(justify left)
 		)
-		(uuid "7db63d65-3f30-5ad3-9229-02bfbe56547d")
+		(uuid "6edb86a6-0701-5751-a7b7-5a88bf63d5c3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 317.5000 205.7400 0)
 			(effects
@@ -15627,7 +15977,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f3d18eac-548f-5f34-9637-e58c343b215d")
+		(uuid "131ee144-9d50-5157-87e7-2e28b8ea43bf")
 	)
 	(global_label "LED_BUS_A"
 		(shape passive)
@@ -15639,7 +15989,7 @@
 			)
 			(justify right)
 		)
-		(uuid "936bd2f9-ac3a-5c8a-b001-28733e78e91c")
+		(uuid "59e826d4-2898-5fb2-8339-07c47da1b5c2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 317.5000 223.5200 0)
 			(effects
@@ -15735,7 +16085,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c363a6ba-d139-504f-afdf-5a1c3c3c9da5")
+		(uuid "94c93bee-d46c-5dbf-b280-cab7364e9332")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -15745,8 +16095,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "fcc9025d-5d5e-5503-b523-dd0cd398b55f")
-		(property "Reference" "#PWR055"
+		(uuid "44f265db-6d69-5200-84ae-148a81f74d07")
+		(property "Reference" "#PWR057"
 			(at 317.5000 245.1100 0)
 			(effects
 				(font
@@ -15782,12 +16132,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "df3ed312-eb33-5f7e-8605-878c9d178b8d")
+			(uuid "bcbd0ef5-ddfc-55ea-b896-695324124831")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR055")
+					(reference "#PWR057")
 					(unit 1)
 				)
 			)
@@ -15802,7 +16152,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4ea0dd60-a9d2-50dd-8578-655648d9a5eb")
+		(uuid "98f8d0d7-176f-5afc-89e7-704a416387f7")
 	)
 	(global_label "LED_BUS_A"
 		(shape passive)
@@ -15814,7 +16164,7 @@
 			)
 			(justify left)
 		)
-		(uuid "090de5c7-66b1-582b-8784-37108e6cd7e3")
+		(uuid "06df42bd-56c4-5241-a714-9fd8eeb64258")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 317.5000 227.3300 0)
 			(effects
@@ -15910,7 +16260,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d623a2f8-9e8b-54e4-8016-65f37c679f2f")
+		(uuid "ceabd22e-5770-5386-b2d2-c8b4014f9561")
 	)
 	(global_label "LED_FAULT"
 		(shape passive)
@@ -15922,7 +16272,7 @@
 			)
 			(justify left)
 		)
-		(uuid "154162b3-ac44-5e6e-886a-93a36859fb69")
+		(uuid "018cee30-f6d6-56f1-ba09-9873de5b9262")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 351.7900 205.7400 0)
 			(effects
@@ -15942,7 +16292,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1ef860a8-b319-53e3-a17c-40292d0e47b4")
+		(uuid "693f8e1d-c8c1-57a5-9bf9-1c6fee1ff187")
 	)
 	(global_label "LED_FLT_A"
 		(shape passive)
@@ -15954,7 +16304,7 @@
 			)
 			(justify right)
 		)
-		(uuid "aa8a9c41-cfa2-53a6-b2bc-1908456d4e67")
+		(uuid "5cac345f-063b-56a4-adf0-6a6f33cba047")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 351.7900 223.5200 0)
 			(effects
@@ -16050,7 +16400,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fdb81a9f-41fe-5663-8318-7ddc409dea31")
+		(uuid "edb05770-189c-53cc-bda6-59e37a4d3ba7")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -16060,8 +16410,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c8baaa3d-481b-58bd-b4c9-a7928ace987b")
-		(property "Reference" "#PWR056"
+		(uuid "739859c7-9d03-5870-9f36-b0d605051261")
+		(property "Reference" "#PWR058"
 			(at 351.7900 245.1100 0)
 			(effects
 				(font
@@ -16097,12 +16447,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2247ffce-4c98-54ea-9769-f15a654ec025")
+			(uuid "d0051d51-2425-536e-9ab0-496db1e36fa0")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR056")
+					(reference "#PWR058")
 					(unit 1)
 				)
 			)
@@ -16117,7 +16467,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d5de9a78-033c-5271-b480-2ccfc12b5152")
+		(uuid "ffb901cc-018b-5fc5-bb8e-feba5d9e4735")
 	)
 	(global_label "LED_FLT_A"
 		(shape passive)
@@ -16129,7 +16479,7 @@
 			)
 			(justify left)
 		)
-		(uuid "73b4d98f-a8d6-5ed8-a1c3-b4f046158d21")
+		(uuid "2d5e168e-1d4a-58ec-97f3-85872442de16")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 351.7900 227.3300 0)
 			(effects
@@ -16225,7 +16575,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e479e8ce-19e3-5d50-b6a4-f5e08a11e670")
+		(uuid "684d0050-a7ec-54ca-a7a4-1fbeaa879326")
 	)
 	(global_label "A_DE"
 		(shape passive)
@@ -16237,7 +16587,7 @@
 			)
 			(justify left)
 		)
-		(uuid "2e40b896-1520-5481-b8b8-802ebc1c0614")
+		(uuid "fe2a1014-09a3-5e39-813f-17213bbaad8b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 386.0800 205.7400 0)
 			(effects
@@ -16257,7 +16607,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d329f557-a0cf-599d-b7fe-7f533356ccf3")
+		(uuid "57a9fade-75af-5e5d-91cd-642a589e479f")
 	)
 	(global_label "LED_TX_A"
 		(shape passive)
@@ -16269,7 +16619,7 @@
 			)
 			(justify right)
 		)
-		(uuid "5be5030c-5fee-54ac-aba4-98708a2b54e1")
+		(uuid "9c916226-c105-573b-b70b-5affd944359b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 386.0800 223.5200 0)
 			(effects
@@ -16365,7 +16715,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cc8e451f-b2ea-5f6d-ba04-880f99a5fe7d")
+		(uuid "79dadeb6-f8df-507f-80ad-33bf7fae7a95")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -16375,8 +16725,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "44f265db-6d69-5200-84ae-148a81f74d07")
-		(property "Reference" "#PWR057"
+		(uuid "f2befc43-27ab-5685-99cc-205e02b8248c")
+		(property "Reference" "#PWR059"
 			(at 386.0800 245.1100 0)
 			(effects
 				(font
@@ -16412,12 +16762,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "bcbd0ef5-ddfc-55ea-b896-695324124831")
+			(uuid "61262be8-517d-5a0d-91b1-ecfb215393f5")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR057")
+					(reference "#PWR059")
 					(unit 1)
 				)
 			)
@@ -16432,7 +16782,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "92385a4d-a4d8-5dfa-b94f-d534a92de3f6")
+		(uuid "58c8c1bd-94c8-542b-9f8a-40ae1978bffa")
 	)
 	(global_label "LED_TX_A"
 		(shape passive)
@@ -16444,7 +16794,7 @@
 			)
 			(justify left)
 		)
-		(uuid "f861617a-120f-5238-a528-a4f974cacf3e")
+		(uuid "f64272bd-35c2-5536-b8ff-cd461fea14da")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 386.0800 227.3300 0)
 			(effects
@@ -16576,7 +16926,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7beb5221-1772-5726-977e-0c53d16460b8")
+		(uuid "61bc07e2-5462-55de-a867-cea27b6abfbc")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -16586,8 +16936,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "739859c7-9d03-5870-9f36-b0d605051261")
-		(property "Reference" "#PWR058"
+		(uuid "957f63b2-11ca-5f6e-b498-39894e66d9a1")
+		(property "Reference" "#PWR060"
 			(at 240.0300 266.7000 0)
 			(effects
 				(font
@@ -16623,12 +16973,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d0051d51-2425-536e-9ab0-496db1e36fa0")
+			(uuid "d20937d8-a089-5c57-b78e-ee54bdc22eed")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR058")
+					(reference "#PWR060")
 					(unit 1)
 				)
 			)
@@ -16643,7 +16993,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3d00e4f6-885e-5edc-8881-3aaf90ee14fb")
+		(uuid "ebd01d16-b9c7-5bb9-89bb-01dfa0d28d32")
 	)
 	(global_label "LED_PWR"
 		(shape passive)
@@ -16655,7 +17005,7 @@
 			)
 			(justify right)
 		)
-		(uuid "cc8c2ce6-4e0a-588e-9cd8-b9cc85332132")
+		(uuid "cf0f2149-11ff-5449-90d7-267f0116d4ed")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 240.0300 269.2400 0)
 			(effects
@@ -16675,7 +17025,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3fd801da-f0a5-593b-a8a5-eae92cac2f79")
+		(uuid "d4d4f521-ac41-5bd9-b25a-8b5399644aac")
 	)
 	(global_label "LED_WIFI_A"
 		(shape passive)
@@ -16687,7 +17037,7 @@
 			)
 			(justify right)
 		)
-		(uuid "bf8dd77c-7fa1-5cdb-8cec-2ae61c9fae98")
+		(uuid "f6ca2cb9-d91a-5d2b-9b99-6ebe85b9a659")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 240.0300 271.7800 0)
 			(effects
@@ -16707,7 +17057,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9f8fb145-3e37-545b-8ea0-adb30b3e7543")
+		(uuid "eb7debcd-7618-55d3-9b69-dce8eb2e2f1d")
 	)
 	(global_label "LED_BUS_A"
 		(shape passive)
@@ -16719,7 +17069,7 @@
 			)
 			(justify right)
 		)
-		(uuid "7633570b-d343-50e2-bcc9-f4257a8c2eb8")
+		(uuid "ef2173d3-2cbf-5090-b620-8dc9fa40c09f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 240.0300 274.3200 0)
 			(effects
@@ -16739,7 +17089,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a0c791a7-5bf0-5431-a982-488acc0c4584")
+		(uuid "791e0306-e639-5e65-8088-96b9ccacf6f8")
 	)
 	(global_label "LED_FLT_A"
 		(shape passive)
@@ -16751,7 +17101,7 @@
 			)
 			(justify right)
 		)
-		(uuid "bd08bcdd-33ac-5d08-8d7c-23c2ab725de5")
+		(uuid "7fa77745-6e32-595f-a279-fb2d5635fa3d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 240.0300 276.8600 0)
 			(effects
@@ -16771,7 +17121,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "927e5006-29e9-5efd-9a14-321a0096805e")
+		(uuid "3d17be5b-ba0c-5c37-a622-d428e62e3ecc")
 	)
 	(global_label "LED_TX_A"
 		(shape passive)
@@ -16783,7 +17133,7 @@
 			)
 			(justify right)
 		)
-		(uuid "066fb2e9-c127-54e6-a21c-378f169fa494")
+		(uuid "e7236f08-efe9-50b6-b1b6-60e7a6372671")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 240.0300 279.4000 0)
 			(effects
@@ -16879,7 +17229,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "39a59338-edf3-589d-9f2b-69a506dfcef2")
+		(uuid "a6bf7aa0-2814-5110-be36-f541e9ad5f44")
 	)
 	(global_label "FAN_SW"
 		(shape passive)
@@ -16891,7 +17241,7 @@
 			)
 			(justify right)
 		)
-		(uuid "ae482bf5-94ff-5f8e-aead-8f965842e0d5")
+		(uuid "789ccd1e-2a36-5ec0-be06-173a0c9f2fe5")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 279.4000 271.7800 0)
 			(effects
@@ -16911,7 +17261,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "045d4e14-035c-5fdd-bd79-d3a935ffd1d2")
+		(uuid "e6e3b890-98f1-5a19-903f-50041f42b4c9")
 	)
 	(global_label "FAN_12V"
 		(shape passive)
@@ -16923,7 +17273,7 @@
 			)
 			(justify right)
 		)
-		(uuid "4437298a-b695-5160-9938-9133a7a6b595")
+		(uuid "e34f4c5c-4265-5095-baee-651ff2b5dccc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 279.4000 274.3200 0)
 			(effects
@@ -16951,7 +17301,7 @@
 				)
 			)
 		)
-		(property "Value" "0.5A polyfuse 1812"
+		(property "Value" "1.1A polyfuse 1812 33V"
 			(at 316.2300 265.4300 0)
 			(effects
 				(font
@@ -16977,7 +17327,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C462518"
+		(property "LCSC" "C142747"
 			(at 313.6900 264.1600 0)
 			(effects
 				(font
@@ -16986,7 +17336,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "SMD1812P050TF/60: 0.5 A hold / 1 A trip. Fan supply, independent of F1/F2"
+		(property "Description" "Littelfuse 1812L110/33MR: 1.1 A hold / 1.95 A trip, 33 V. Fan supply, independent of F1/F2"
 			(at 313.6900 264.1600 0)
 			(effects
 				(font
@@ -17019,7 +17369,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d9450150-f8cf-5bfb-ab15-9e3da59e5f5a")
+		(uuid "d2539000-a410-53ef-97c7-72522fdf39a4")
 	)
 	(symbol
 		(lib_id "power:+12V")
@@ -17029,8 +17379,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "f2befc43-27ab-5685-99cc-205e02b8248c")
-		(property "Reference" "#PWR059"
+		(uuid "b9754322-d8f8-5869-a08f-0a213d3883bc")
+		(property "Reference" "#PWR061"
 			(at 313.6900 255.2700 0)
 			(effects
 				(font
@@ -17066,12 +17416,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "61262be8-517d-5a0d-91b1-ecfb215393f5")
+			(uuid "d69ff2d0-6d18-5de7-828d-8778e260a571")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR059")
+					(reference "#PWR061")
 					(unit 1)
 				)
 			)
@@ -17086,7 +17436,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3de1ce31-97a0-508e-af84-216e6f96439c")
+		(uuid "e4dc6676-72cb-54d3-b295-6dc04c04b39e")
 	)
 	(global_label "FAN_12V"
 		(shape passive)
@@ -17098,7 +17448,7 @@
 			)
 			(justify right)
 		)
-		(uuid "b9230784-9247-5086-a870-5d7cac60c429")
+		(uuid "f6e33223-f6e2-5166-99bf-808ee1c2eaa6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 313.6900 273.0500 0)
 			(effects
@@ -17194,7 +17544,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "53770bb1-1d18-5f51-98ab-06a688c23f14")
+		(uuid "1c6add23-7a6a-5e98-b186-d55cac383d8c")
 	)
 	(global_label "FAN_12V"
 		(shape passive)
@@ -17206,7 +17556,7 @@
 			)
 			(justify right)
 		)
-		(uuid "f4622da0-31e5-52bf-a2ee-96c8f61b7649")
+		(uuid "a183c437-f8ba-528f-a635-0e3962eaadcc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 334.0100 280.6700 0)
 			(effects
@@ -17226,7 +17576,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f1398b77-75e8-5d63-b29a-481efb0b6470")
+		(uuid "9c1a712a-7884-5400-8af0-2fd90cba8f76")
 	)
 	(global_label "FAN_SW"
 		(shape passive)
@@ -17238,7 +17588,7 @@
 			)
 			(justify left)
 		)
-		(uuid "7f9fbf1c-953b-56a3-a06c-8191e95f257a")
+		(uuid "5a6f37e9-6baa-5f57-a794-d104b074d95d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 334.0100 262.8900 0)
 			(effects
@@ -17337,7 +17687,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "69e7c05b-6244-543b-b1ef-cb90048bd75f")
+		(uuid "e22d16a6-706d-5632-b690-62d073e5a561")
 	)
 	(global_label "FAN_G"
 		(shape passive)
@@ -17349,7 +17699,7 @@
 			)
 			(justify right)
 		)
-		(uuid "37f71e8b-ef42-5b61-89b5-9f35a792a385")
+		(uuid "42bd134e-5a0b-52a2-a322-8d874339f0f8")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 349.2500 278.1300 0)
 			(effects
@@ -17369,7 +17719,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "08d97371-ff49-506a-9abd-5ffa9ba999de")
+		(uuid "fefe4dfa-99fa-5b5f-8f20-e4bf82254f2a")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -17379,8 +17729,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "957f63b2-11ca-5f6e-b498-39894e66d9a1")
-		(property "Reference" "#PWR060"
+		(uuid "3e80d3c6-0ee4-56ec-a0ff-818569329613")
+		(property "Reference" "#PWR062"
 			(at 361.9500 288.2900 0)
 			(effects
 				(font
@@ -17416,12 +17766,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d20937d8-a089-5c57-b78e-ee54bdc22eed")
+			(uuid "1f18f8ab-e860-55b0-a683-e7e6f9e59967")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR060")
+					(reference "#PWR062")
 					(unit 1)
 				)
 			)
@@ -17436,7 +17786,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "61b0d68a-4928-5cb7-8fa4-31a5c4229d4c")
+		(uuid "2443d00c-0f74-555d-b19b-d178a0409d0a")
 	)
 	(global_label "FAN_SW"
 		(shape passive)
@@ -17448,7 +17798,7 @@
 			)
 			(justify left)
 		)
-		(uuid "b1579886-592b-5743-ba87-0b63407da468")
+		(uuid "25396cdf-0eb3-5b36-afaf-7b94d9bc1a83")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 361.9500 267.9700 0)
 			(effects
@@ -17544,7 +17894,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fc9f5863-1cb3-5b00-b3c2-05eb937608bd")
+		(uuid "82f0188e-ffd4-5250-a790-388f798df6a0")
 	)
 	(global_label "FAN_PWM"
 		(shape passive)
@@ -17556,7 +17906,7 @@
 			)
 			(justify left)
 		)
-		(uuid "8a21f055-c1c0-5280-bdb7-1addf4629f92")
+		(uuid "65af0da4-90d2-5209-be4b-86f8113e05d3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 382.2700 259.0800 0)
 			(effects
@@ -17576,7 +17926,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "5d756e74-1f69-5eb8-b920-82e42a699bc4")
+		(uuid "1ecf9f05-da09-5d35-aa50-0ee5f2185388")
 	)
 	(global_label "FAN_G"
 		(shape passive)
@@ -17588,7 +17938,7 @@
 			)
 			(justify right)
 		)
-		(uuid "6bb8339f-4ead-5af3-806c-c2bd5a0ce9cf")
+		(uuid "1c5babfa-189b-5849-a5b5-d9aaef3c8cee")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 382.2700 276.8600 0)
 			(effects
@@ -17684,7 +18034,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "41a7edbe-170c-517c-8282-161fbd55559c")
+		(uuid "4c848234-756e-585c-8214-40b8ce84508e")
 	)
 	(global_label "FAN_G"
 		(shape passive)
@@ -17696,7 +18046,7 @@
 			)
 			(justify right)
 		)
-		(uuid "345e9845-c8df-548d-821c-b8270a982668")
+		(uuid "7dbfb6a7-7105-5aec-afc2-a07a99b7ce37")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 373.3800 284.4800 0)
 			(effects
@@ -17716,7 +18066,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "786f329a-0291-5ef6-b323-5504ea4d5f68")
+		(uuid "639a9bfd-de6c-5cba-bb9d-13095901c243")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -17726,8 +18076,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "b9754322-d8f8-5869-a08f-0a213d3883bc")
-		(property "Reference" "#PWR061"
+		(uuid "20d3f34d-dd56-5045-9249-82a78511e68e")
+		(property "Reference" "#PWR063"
 			(at 391.1600 284.4800 0)
 			(effects
 				(font
@@ -17763,12 +18113,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d69ff2d0-6d18-5de7-828d-8778e260a571")
+			(uuid "f590211b-d918-5b9f-b163-8ef001a1e1c0")
 		)
 		(instances
 			(project "binfohub_bridge"
 				(path "/533524c3-af9f-55d5-9b03-860359c2b992"
-					(reference "#PWR061")
+					(reference "#PWR063")
 					(unit 1)
 				)
 			)

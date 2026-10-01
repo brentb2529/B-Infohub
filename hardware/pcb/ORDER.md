@@ -20,10 +20,16 @@ The through-hole parts (J1–J6, JP1, JP2) are flagged in the BOM as
 `JLC THT (economic, hand-solder fee)` — include them if you want JLC to fit them,
 or drop those rows and hand-solder.
 
-**35 distinct LCSC parts** (38 BOM lines). Stock was checked on 2026-10-01 for the
-parts new in rev 1.1 (module, AP63203, AO3400A, SS14, TS-1187A, 0.5 A polyfuse,
-1 µF / 10 µF); re-check the rest in JLC's BOM review before paying — rev 1.0's
-check is a month old.
+**Assembly tier: Standard, not Economic.** The ESP32-WROOM-32E-**H4** (C3013935,
+the 105 °C grade this board needs) is only offered on JLC's Standard PCBA. Pick
+Standard when the quote asks; Economic will reject the part.
+
+Stock was checked on 2026-10-01 for the parts new in rev 1.1 (module, AP63203,
+AO3400A, SS14, TS-1187A, 1.1 A polyfuse, 680 Ω, 1 µF / 10 µF); re-check the rest
+in JLC's BOM review before paying — rev 1.0's check is a month old. **C25804 (10 k,
+×5) showed out of stock on LCSC's retail side on 2026-10-01**; JLC's assembly pool
+is separate, but if the BOM review flags it, substitute any in-stock 0603 10 k ±1 %
+basic part — there is nothing special about it.
 
 ## 2. Loose parts — NOT on the PCB BOM
 
@@ -55,12 +61,14 @@ Optional, depending on how you build it:
   same way.**
 - **J2 is 2-position, J3 is 4-position, J5 is 2-position.** If the render shows
   anything else, stop.
-- **U1 orientation — new in rev 1.1, not yet verified in JLC's viewer.** The
-  module's antenna end must point at the right-hand board edge (+x), over the bare
-  copper-free strip. JLC's library rotation for this package is unknown; if the
-  render shows the antenna pointing into the board, fix the `ESPW` entry in
-  `ROT_FIX` (tools/gen_bom.py) and re-export the CPL. Same check for **D10** (SS14
-  cathode band toward F3 / the +12 V side) and the two **TS-1187A** switches
-  (symmetric; any rotation is fine).
+- **U1 orientation — new in rev 1.1, not yet verified in JLC's viewer. A miss is a
+  dead board (every pad on the wrong net).** In the placement preview: **pin 1 at
+  board (71.26, 53.25)** and the antenna pointing at the right-hand edge (+x), over
+  the bare strip, where the front silk says `ANT >`. If the render shows otherwise,
+  fix the `ESPW` entry in `ROT_FIX` (tools/gen_bom.py) and re-export the CPL. Same
+  pass for **D10** (SS14 cathode band toward F3 / the +12 V side) and the two
+  **TS-1187A** switches (180° is harmless, 90° is not — their pads are not square).
+- **J4/J6/JP1/JP2 headers** now get the +90° that b-hydro's headers needed; it has
+  not been seen in the viewer for these footprints. Check, or hand-solder them.
 - The `lib_footprint_mismatch` DRC warnings on J2/J3/J5 are expected: the locating
   pegs are deliberately stripped because the KF128 parts we buy do not have them.

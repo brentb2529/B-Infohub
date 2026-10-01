@@ -201,7 +201,7 @@ def silkscreen():
     silk("J2  to ABC controller: A and B only (harness GND lands on J1).", 45, 46, 0, 0.8, B)
     silk("     Swap A/B if the bus stays silent - it cannot damage anything.", 45, 50, 0, 0.8, B)
     silk("J3  to InfoHub: +12V (fused by F2, 2A), GND, A, B", 45, 54, 0, 0.8, B)
-    silk("F1 1.1A feeds the bridge, F2 2A the InfoHub, F3 0.5A the fan - separate", 45, 58, 0, 0.8, B)
+    silk("F1 1.1A feeds the bridge, F2 2A the InfoHub, F3 1.1A the fan - separate", 45, 58, 0, 0.8, B)
     silk("on purpose: no single fault takes the telemetry down.", 45, 62, 0, 0.8, B)
 
     silk("PORT A (U3) controller  IO17 DI / IO16 RO / IO4 DE+RE", 45, 70, 0, 0.8, B)
@@ -209,7 +209,7 @@ def silkscreen():
     silk("JP1/JP2 = 120R termination. LEAVE OFF unless you see CRC errors:", 45, 78, 0, 0.8, B)
     silk("9600 baud proved reliable UNTERMINATED, 368/368 reads, 2026-08-31.", 45, 82, 0, 0.8, B)
     silk("ESP32-WROOM-32E. Fit -32UE + U.FL pigtail for a remote antenna.", 45, 86, 0, 0.8, B)
-    silk("J5 FAN 12V 0.5A PWM (IO32).  J6 PROG: first flash only, then OTA.", 45, 89.5, 0, 0.8, B)
+    silk("J5 FAN 12V <=0.5A PWM (IO32).  J6 PROG: first flash only, then OTA.", 45, 89.5, 0, 0.8, B)
 
 def gr_text(t,x,y,r,s,layer):
     return ['gr_text',q(t),['at',f"{x}",f"{y}",f"{r}"],['layer',q(layer)],['uuid',q(uid('gt',t,x,y,layer))],['effects',['font',['size',str(s),str(s)],['thickness',str(round(s*0.15,3))]],['justify','mirror'] if layer.startswith('B.') else ['justify']]]

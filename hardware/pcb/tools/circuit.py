@@ -134,7 +134,8 @@ BW,BH=90.0,92.0
 # project copy narrows it to +-12 mm so it clears the mounting hole at
 # (85.5, 46) -- that is still 3 mm beyond the module body each side, and the
 # region in front of the antenna is kept bare out to the board edge
-# (12 mm). The hole's screw head is 14 mm off the antenna axis.
+# (11.3 mm). The hole's centre is 16 mm off the antenna axis. Espressif asks
+# for +-24 mm of clearance; this costs a few dB, and the -32UE is the escape.
 #
 # Footprint rotation 270: local -y (antenna) -> board +x. Pads 1-14 run along
 # y = 53.25, pads 25-38 along y = 70.75, pads 15-24 at x = 53.5.
@@ -143,16 +144,19 @@ ANT_KEEPOUT=(72.56, BW, 50.0, 74.0)   # board-space rectangle, both copper layer
 esp_nets={1:"GND",15:"GND",38:"GND",39:"GND",
  2:"+3V3",3:"ESP_EN",8:"FAN_PWM",10:"LED_WIFI",11:"LED_BUS",12:"LED_FAULT",
  25:"ESP_IO0",26:"A_DE",27:"A_RO",28:"A_DI",33:"B_DE",34:"ESP_RXD0",35:"ESP_TXD0",36:"B_DI",37:"B_RO"}
-part("U1","ESPW","ESPW","ESP32-WROOM-32E",esp_nets,(ESP_C[0],ESP_C[1],ESP_ROT),lcsc="C2973652",
-     desc="ESP32-WROOM-32E, 4 MB. Soldered module, antenna toward the board edge. "
-          "ALTERNATE: ESP32-WROOM-32UE-N4 (C2934568) -- identical pads, U.FL instead of the PCB antenna; "
+part("U1","ESPW","ESPW","ESP32-WROOM-32E-H4",esp_nets,(ESP_C[0],ESP_C[1],ESP_ROT),lcsc="C3013935",
+     desc="ESP32-WROOM-32E-H4: 4 MB, -40..+105 C grade (the plain -32E is 85 C, and this revision exists "
+          "because the die reached 87 C). Soldered module, antenna toward the board edge. Standard PCBA only at JLC. "
+          "ALTERNATE: ESP32-WROOM-32UE-N4 (C2934568, 85 C grade) -- identical pads, U.FL instead of the PCB antenna; "
           "fit with a U.FL-to-SMA bulkhead pigtail through the enclosure for a remote antenna. Rev 1.1.")
 
 # Module supply decoupling: the module datasheet asks for >=10 uF close to VDD
 # (pad 2, at board (70.0, 53.25)) plus a 100 nF. Wi-Fi transmit bursts pull
 # ~300 mA peaks through here; the buck's two 22 uF are 40 mm away.
-part("C7","C","C0805","10uF 25V",{1:"+3V3",2:"GND"},(69.0,49.0,0),lcsc="C15850",desc="3.3 V bulk at the module VDD pad")
-part("C8","C","C","100nF 50V",{1:"+3V3",2:"GND"},(72.5,46.5,0),lcsc="C14663",desc="3.3 V HF decoupling at the module")
+# The 100 nF is the one that must be CLOSE (it is the >20 MHz path); the 10 uF
+# can sit a few mm further out. C8's +3V3 pad is hand-routed to the VDD pad.
+part("C7","C","C0805","10uF 25V",{1:"+3V3",2:"GND"},(72.5,46.5,0),lcsc="C15850",desc="3.3 V bulk near the module VDD pad")
+part("C8","C","C","100nF 50V",{1:"+3V3",2:"GND"},(69.0,49.0,0),lcsc="C14663",desc="3.3 V HF decoupling, 4.5 mm from the VDD pad")
 
 # EN: pull-up plus an RC so power-up reset is clean -- the DevKit had exactly
 # this (10k + 1 uF) and the module datasheet asks for it. SW1 pulls EN low for
@@ -209,8 +213,9 @@ part("F2","F","FUSE","2A polyfuse 1812",{1:"+12V",2:"+12V_IH"},(45.5,33.5,0),lcs
 # ===== 3.3 V buck (AP63203WU-7) -- application circuit from b-hydro carrier v2.1 =====
 # Rev 1.0 made 5 V here (AP63205) and let the DevKit's AMS1117 drop it to 3.3 V
 # linearly. Nothing on this board needs 5 V, so rev 1.1 makes 3.3 V directly:
-# same part family, same pinout, same inductor and capacitors -- the AP6320x
-# datasheet's 10 uH / 2x22 uF circuit covers every fixed-output member.
+# same part family, same pinout, same inductor and capacitors. The datasheet's
+# own 3.3 V example uses 4.7 uH; 10 uH is the safe side of it (lower ripple
+# current, 250 ns on-time against an 80 ns minimum) and is what rev 1.0 proved.
 part("U2","BUCK","TSOT6","AP63203WU-7",{1:"3V3_BUCK",2:"BUCK_EN",3:"+12V",4:"GND",5:"BUCK_SW",6:"BUCK_BST"},
      (14.0,28.0,0),lcsc="C780769",desc="Sync buck 3.8-32 V in, fixed 3.3 V 2 A, TSOT-23-6. Rev 1.1: was AP63205 (5 V).")
 part("C3","C","C1206","10uF 50V",{1:"+12V",2:"GND"},(14.0,33.5,0),lcsc="C13585",desc="buck input cap, right at VIN. 50 V not 25 V: ceramics lose a lot of capacitance under DC bias, and this sits on a 14.6 V rail. (b-hydro used C89632; that part is down to single-digit stock at LCSC, so this board takes the basic-part equivalent.)")
@@ -225,16 +230,21 @@ part("F1","F","FUSE","1.1A polyfuse",{1:"3V3_BUCK",2:"+3V3"},(32.0,26.5,0),lcsc=
 # ===== fan output (J5) =====
 # 12 V, low-side switched by Q2 from IO32 at 25 kHz PWM, so a plain 2-wire fan
 # gets a controllable average voltage and a 4-wire fan can be run from its
-# supply pins alone. 0.5 A polyfuse (F3): a stalled 12 V fan is a heater, and
-# this rail also carries the InfoHub. D10 catches the motor's inductive kick
-# when Q2 opens; without it the drain sees a spike every PWM cycle.
+# supply pins alone. F3 is a 1.1 A-hold / 1.95 A-trip 33 V polyfuse: a stalled
+# 12 V fan is a heater, and this rail also carries the InfoHub. NOT 0.5 A (the
+# first draft): a PPTC's hold current derates to ~60 % at the 70-85 C this box
+# reaches, so a 0.5 A part would nuisance-trip on any real fan at exactly the
+# moment the fan is needed (EE review). 1.1 A derates to ~0.7 A hot, trips at
+# ~2 A, well inside Q2 (5.7 A) and D10. 33 V, not F1's 16 V part: the rail is
+# 14.6 V on charge. D10 catches the motor's inductive kick when Q2 opens;
+# without it the drain sees a spike every PWM cycle.
 # Q2 is the AO3400A: 48 mohm at 2.5 V gate drive, so a 3.3 V GPIO turns it on
 # fully. R12 slows the gate edge a little (EMI); R13 holds the fan OFF while the
 # ESP is in reset or being flashed -- an undriven gate must not mean a running fan.
 part("J5","J2","XH2","FAN 12V",{1:"FAN_12V",2:"FAN_SW"},(28.0,42.0,0),lcsc="C474920",
      desc="Fan header, screw terminal 2.54 2P: +12 V (fused by F3) and switched return. 2-wire 12 V fan, 0.5 A max. Rev 1.1.",hand=True)
-part("F3","F","FUSE","0.5A polyfuse 1812",{1:"+12V",2:"FAN_12V"},(37.5,42.0,0),lcsc="C462518",
-     desc="SMD1812P050TF/60: 0.5 A hold / 1 A trip. Fan supply, independent of F1/F2")
+part("F3","F","FUSE","1.1A polyfuse 1812 33V",{1:"+12V",2:"FAN_12V"},(37.5,42.0,0),lcsc="C142747",
+     desc="Littelfuse 1812L110/33MR: 1.1 A hold / 1.95 A trip, 33 V. Fan supply, independent of F1/F2")
 part("D10","DS","SMA","SS14",{1:"FAN_12V",2:"FAN_SW"},(37.5,47.5,0),lcsc="C2480",
      desc="Flyback across the fan: cathode to +12 V, anode to the switched node")
 part("Q2","NMOS","SOT","AO3400A",{1:"FAN_G",2:"GND",3:"FAN_SW"},(29.0,51.0,0),lcsc="C20917",
@@ -250,6 +260,15 @@ part("J2","J2","XH2","BUS A B",{1:"BUS_A",2:"BUS_B"},(50.0,7.0,0),lcsc="C474920"
 part("U3","RS485","SOIC8","SP3485EN",{1:"A_RO",2:"A_DE",3:"A_DE",4:"A_DI",5:"GND",6:"BUS_A",7:"BUS_B",8:"+3V3"},
      (52.0,27.0,0),lcsc="C8963",desc="3.3 V half-duplex RS-485, controller side. RE and DE tied: one GPIO drives direction.")
 part("C9","C","C","100nF 50V",{1:"+3V3",2:"GND"},(58.5,32.0,90),lcsc="C14663",desc="U3 decoupling")
+# DE pull-downs (rev 1.1, EE review). The SP3485's DE/RE input has no internal
+# pull-down and the ESP32's GPIOs are high-impedance from reset until ESPHome
+# configures them -- the EN RC plus ROM boot, and the whole of a J6 first flash
+# while the ROM bootloader runs. A floating DE above VIH would have this board
+# DRIVING the generator's bus with a static level: the one thing it must never
+# do. 10k holds both transceivers in receive until the firmware says otherwise.
+# Same principle as R13 on the fan gate. Rev 1.0 is fielded without these.
+part("R16","R","R","10k",{1:"A_DE",2:"GND"},(46.0,30.5,0),lcsc="C25804",
+     desc="A_DE pull-down: port A transceiver in receive while the ESP is in reset or being flashed")
 part("D3","TVS3","SOT","SM712",{1:"BUS_A",2:"BUS_B",3:"GND"},(50.0,20.5,0),lcsc="C32677",
      desc="PSM712 RS-485 TVS on the controller pair (asymmetric -7/+12 V, the RS-485 standard part)")
 part("R3","R","R","120R",{1:"BUS_A",2:"TERM_A"},(58.5,20.5,0),lcsc="C22787",desc="bus termination, controller side")
@@ -262,6 +281,8 @@ part("J3","J4","XH4","IH 12V GND A B",{1:"+12V_IH",2:"GND",3:"IH_A",4:"IH_B"},(7
 part("U4","RS485","SOIC8","SP3485EN",{1:"B_RO",2:"B_DE",3:"B_DE",4:"B_DI",5:"GND",6:"IH_A",7:"IH_B",8:"+3V3"},
      (72.0,27.0,0),lcsc="C8963",desc="3.3 V half-duplex RS-485, InfoHub side. ESPHome modbus role: server.")
 part("C10","C","C","100nF 50V",{1:"+3V3",2:"GND"},(64.5,33.0,90),lcsc="C14663",desc="U4 decoupling")
+part("R17","R","R","10k",{1:"B_DE",2:"GND"},(61.0,29.0,0),lcsc="C25804",
+     desc="B_DE pull-down: port B transceiver in receive while the ESP is in reset or being flashed (see R16)")
 part("D4","TVS3","SOT","SM712",{1:"IH_A",2:"IH_B",3:"GND"},(70.0,20.5,0),lcsc="C32677",desc="PSM712 RS-485 TVS on the InfoHub pair")
 part("R4","R","R","120R",{1:"IH_A",2:"TERM_B"},(78.5,20.5,0),lcsc="C22787",desc="bus termination, InfoHub side")
 part("JP2","J2","PH2","TERM 120R",{1:"TERM_B",2:"IH_B"},(82.5,20.5,0),lcsc="C492401",
@@ -280,15 +301,18 @@ part("JP2","J2","PH2","TERM 120R",{1:"TERM_B",2:"IH_B"},(82.5,20.5,0),lcsc="C492
 # GC-1032 biases its own bus.
 #
 # A pull-up on A and a pull-down on B hold the idle pair at a definite "1".
-# With JP2 OPEN (the default, and correct for a cable of a metre or two) the
-# only load is the two receivers' ~12k inputs, so 4k7 gives ~1.3 V idle
-# differential -- six times the dead band. IF TERMINATION IS EVER FITTED the
-# 120R dominates and these must drop to 560R-680R to stay above 200 mV; the
-# 4k7 pair is then too weak. Fitted by default: this is a fix, not an option.
-part("R10","R","R","4k7",{1:"+3V3",2:"IH_A"},(66.0,25.0,90),lcsc="C23162",
-     desc="Fail-safe bias, InfoHub pair: pull-up on A. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1.")
-part("R11","R","R","4k7",{1:"IH_B",2:"GND"},(66.0,29.0,90),lcsc="C23162",
-     desc="Fail-safe bias, InfoHub pair: pull-down on B. 4k7 with JP2 open; 680R if JP2 is fitted. Rev 1.1.")
+# 680R, not 4k7 (EE review, 2026-10-01): we do not know whether the InfoHub
+# terminates its own end, and it was built to be a bus master at a bus end,
+# which usually means it does. With a far-end 120R, 4k7/4k7 across 3.3 V
+# leaves 42 mV idle -- a fifth of the dead band, the bias would fix nothing.
+# 680R gives 268 mV with a far-end 120R and 2.7 V unterminated, 2.4 mA idle,
+# a 1.36k load the SP3485 drives without noticing. If BOTH ends ever carry
+# 120R (JP2 fitted and the InfoHub terminated) use ~390R. Fitted by default:
+# this is a fix, not an option.
+part("R10","R","R","680R",{1:"+3V3",2:"IH_A"},(66.0,25.0,90),lcsc="C23228",
+     desc="Fail-safe bias, InfoHub pair: pull-up on A. 680R covers an unterminated pair or a terminated far end; ~390R if both ends are terminated. Rev 1.1.")
+part("R11","R","R","680R",{1:"IH_B",2:"GND"},(66.0,29.0,90),lcsc="C23228",
+     desc="Fail-safe bias, InfoHub pair: pull-down on B. 680R covers an unterminated pair or a terminated far end; ~390R if both ends are terminated. Rev 1.1.")
 
 # ===== status LEDs =====
 # Answers 'what is this box doing?' without a laptop. PWR and TX need no GPIO.
@@ -380,6 +404,7 @@ PRE=[
  (74.475,28.905,74.475,30.6,0.25,"F.Cu","GND"),
  # U2 TSOT-23-6 @ (14,28)
  (12.863,28.0,10.8,28.0,0.25,"F.Cu","BUCK_EN"),
+ (12.863,27.05,10.8,26.2,0.25,"F.Cu","3V3_BUCK"),    # FB pin, rev 1.1: trapped once R16/R17 shifted the 12 V routes
  (15.137,27.05,17.4,26.2,0.25,"F.Cu","BUCK_BST"),
  # rev 1.1: SW and GND hand-routed all the way. The 12 V class routes first
  # and its 1 mm feed to F2/F3 cut the corridor between U2 and L1 on every pass.
@@ -392,12 +417,12 @@ PRE=[
  # U1 WROOM @ (66,62) rot 270: VDD (pad 2) sits between GND and EN at 1.27 mm
  # pitch and is fully inside their clearance. Straight out of the row to C7.
  (69.99,53.25,69.99,50.6,0.4,"F.Cu","+3V3"),
- (69.99,50.6,68.05,50.6,0.4,"F.Cu","+3V3"),
- (68.05,50.6,68.05,49.0,0.4,"F.Cu","+3V3"),          # C7 pad 1
- # C7's GND pad is boxed in by that track below and the module's escape traffic;
+ (69.99,50.6,68.175,50.6,0.4,"F.Cu","+3V3"),
+ (68.175,50.6,68.175,49.0,0.4,"F.Cu","+3V3"),        # C8 pad 1 (100 nF)
+ # C8's GND pad is boxed in by that track below and the module's escape traffic;
  # GND routes last. Straight up, then to SW2's GND pad (the diagonal pair's pad 2).
- (69.95,49.0,69.95,46.0,0.5,"F.Cu","GND"),
- (69.95,46.0,72.25,43.85,0.5,"F.Cu","GND"),          # SW2 pad 2
+ (69.825,49.0,69.825,46.0,0.5,"F.Cu","GND"),
+ (69.825,46.0,72.25,43.85,0.5,"F.Cu","GND"),         # SW2 pad 2
 ]
 # Every other used module pad gets a straight escape stub out of its row, for
 # the same reason: at 1.27 mm pitch the pad interiors sit inside the neighbours'
