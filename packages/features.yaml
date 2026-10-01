@@ -56,4 +56,8 @@ switch:
     turn_on_action:
       - logger.log: "InfoHub passthrough enabled -- serving cached registers on port B"
     turn_off_action:
-      - logger.log: "InfoHub passthrough disabled -- port B silent"
+      # Not silent: the proxy's read lambdas decline, and ESPHome's modbus
+      # server answers a declined read with a "device failure" exception. The
+      # InfoHub is told, in Modbus, that the device behind us is broken. True
+      # silence on port B is only the cold-cache gate in passthrough-health.yaml.
+      - logger.log: "InfoHub passthrough disabled -- port B answers every read with a device-failure exception"

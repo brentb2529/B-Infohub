@@ -7,7 +7,7 @@ esphome:
   comment: "Briggs & Stratton GC-1032 RS-485 bridge (InfoHub replacement)"
   project:
     name: bbensten.b_infohub
-    version: "1.2.1"
+    version: "1.2.2"
 
 logger:
   level: INFO

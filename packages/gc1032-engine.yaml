@@ -200,6 +200,10 @@ sensor:
     accuracy_decimals: 0
     entity_category: diagnostic
     disabled_by_default: true
+    # Highest address the InfoHub proxy serves, so its arrival means the whole
+    # proxied map has been read this boot. Releases port B (passthrough-health).
+    on_value:
+      - script.execute: portb_release
     # genmon labels this "Unknown Value". Exposed so you can watch it across a run
     # cycle and see if it correlates with anything. Enable it if you go hunting.
 

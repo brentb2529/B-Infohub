@@ -15,6 +15,31 @@
 # InfoHub chooses to ask for (28-30 on this unit), so the count climbs in
 # steps. What matters is that it climbs, and how long ago it last did.
 
+#
+# COLD CACHE: PORT B IS SILENT UNTIL THE FIRST FULL POLL HAS LANDED.
+#
+# A register we have not read yet is served as 0xFFFF (packages/passthrough.yaml).
+# For a voltage that is "not fitted"; for the status word at 0x004F it is every
+# bit set, and the InfoHub decodes that as UTILITY POWER FAILURE. So every
+# reboot handed the vendor cloud a few seconds of "grid lost" -- and on
+# 2026-10-01, with the bus marginal from heat, eight minutes of it, which
+# paged a CRITICAL from Grafana. Every "grid Lost" the cloud recorded in the
+# preceding week lines up with a bridge reboot; the grid never went anywhere.
+#
+# The fix is to not answer at all until the cache is real. The port-B hub's
+# loop() is what reads the UART and dispatches requests, so pausing it is
+# silence on the wire: the InfoHub sees exactly what it sees when this board
+# is powered off, a comms timeout, which it already tolerates without telling
+# the cloud anything. Released by the LAST proxied register (0x0056) arriving
+# with the status word already in hand -- the poller walks the map in address
+# order, so by then every served value is from this boot. The receive buffer
+# is drained first: requests that piled up while paused would otherwise be
+# answered late, and a late Modbus reply is a corrupt one to the master.
+#
+# Not a feature toggle. When the owner turns passthrough OFF the lambdas
+# decline and the server sends an exception reply ("device failure"), which
+# is a deliberate message; this gate is about not sending a WRONG one.
+
 globals:
   - id: ih_last_ms
     type: uint32_t
@@ -24,6 +49,32 @@ globals:
     type: uint32_t
     restore_value: false
     initial_value: '0'
+  - id: ih_primed
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+esphome:
+  on_boot:
+    # After every component's setup(), so the hub exists; before the InfoHub's
+    # first request can be parsed, because loop() has not run yet.
+    - priority: -100
+      then:
+        - lambda: |-
+            id(rs485_bus_b).disable_loop();
+            ESP_LOGI("portb", "Port B held silent until the first full poll fills the cache");
+
+script:
+  - id: portb_release
+    mode: single
+    then:
+      - lambda: |-
+          if (id(ih_primed)) return;
+          if (std::isnan(id(alarm_reg_4f).state)) return;   // status word not in yet
+          while (id(rs485_uart_b).available()) { uint8_t b; id(rs485_uart_b).read_byte(&b); }
+          id(ih_primed) = true;
+          id(rs485_bus_b).enable_loop();
+          ESP_LOGI("portb", "Cache primed from this boot; port B now answering the InfoHub");
 
 sensor:
   - platform: template
