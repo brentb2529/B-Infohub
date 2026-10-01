@@ -9,15 +9,15 @@ from circuit import *
 # placement preview on 2026-08-25 (pin-1 mark vs. our copper): SOT-23 needs +180, TSOT-23-6 needs -90 (=270),
 # 1xN pin headers need 90, CP_Elec SMD electrolytic needs 180 (JLC "+" opposite to KiCad pad 1). Everything else (0603/0805/1206, SMA, SOD-123, LED 0603, JST-XH, 5.08 terminals,
 # SRN6045 inductor, 1812 fuse) matched as-is.
-# Rev 1.1 NEW packages, NOT yet verified in the JLC viewer -- check pin 1 / the antenna end before
-# confirming the order: ESPW (WROOM module, antenna must point to the board edge, +x), SW4 (TS-1187A,
-# symmetric so rotation is harmless), SMA (SS14 cathode band toward F3/+12 V).
+# Rev 1.1 packages, verified in the JLC viewer on 2026-10-01: ESPW (WROOM) needs -90 (=270): JLC's
+# library zero has the antenna at -x and our board rotation 270 put it at -y, over the capacitor row;
+# 180 total puts it at +x, the board edge. SMA (SS14 band toward F3/+12 V) and SW4 (TS-1187A) matched as-is.
 # This project's pin headers are PH2 (JP1/JP2) and PH6 (J4/J6); b-hydro's were PH3/PH4.
 # The "1xN pin headers need 90" finding was made on b-hydro's headers, and the
 # package family is the same, so the rule is applied to ours -- but it has NOT
 # been seen in the JLC viewer for these two footprints. Check J4/J6/JP1/JP2 in
 # the placement preview, or hand-solder the THT (ORDER.md offers both).
-ROT_FIX={"SOT":180,"TSOT6":270,"PH2":90,"PH6":90,"CPSMD":180,"ESPW":0,"SW4":0,"SMA":0}   # PHX/XH2/XH4 (KF128 terminals): verified 0 in the JLC viewer
+ROT_FIX={"SOT":180,"TSOT6":270,"PH2":90,"PH6":90,"CPSMD":180,"ESPW":270,"SW4":0,"SMA":0}   # PHX/XH2/XH4 (KF128 terminals): verified 0 in the JLC viewer
 rows={}
 descs={}
 vals={}
